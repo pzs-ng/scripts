@@ -1,19 +1,24 @@
 #!/usr/bin/perl -w
 use strict;
+
 use POE;
-use Fcntl;
-use POE::Component::IRC;
+use POE::Component::IRC qw(PROGRAM);
+use POE::Wheel::Run;
+
 use HTTP::Date;
+use Fcntl;
 use Time::Duration;
 use AnyDBM_File;
+use Data::Dumper;
 
 my $nick        = 'pzs-ng';
 my $server      = 'irc.homelien.no:6667';
-my @channels    = ('#project-zs-ng,pzsdev', '#pzs-ng');
+my @channels    = ('#project-zs-ng,whydoyoucare', '#pzs-ng');
 my $realname    = 'p-zs-ng - SVN Slave.';
 my $username    = 'pzs-ng';
 my $polltime    = 5;
 my $repository  = '/svn/pzs-ng';
+my $localaddr	= '192.168.0.11';
 my $factdb		= 'factoids';
 
 my @fact_reply		= (
@@ -63,6 +68,7 @@ sub _start {
                 Server   => (split(/:/, $server))[0],
                 Port     => (split(/:/, $server))[1],
                 Username => $username,
+		LocalAddr=> $localaddr,
                 Ircname  => $realname, } );
     $kernel->delay('tick', 1);
 }
@@ -70,6 +76,26 @@ sub _start {
 sub _stop {
     my $kernel = $_[KERNEL];
     $kernel->call( 'pzs-ng', 'quit', 'Control session stopped.' );
+}
+
+### Handle SIGCHLD.  Shut down if the exiting child process was the
+### one we've been managing.
+
+sub sigchld {
+	my ( $heap, $child_pid ) = @_[HEAP, ARG1];
+	if ( $child_pid == $heap->{program}->PID ) {
+		delete $heap->{program};
+		delete $heap->{stdio};
+	}
+	return 0;
+}
+
+### Handle STDOUT from the child program.
+sub child_stdout {
+	my ($kernel, $heap, $input) = @_[KERNEL, HEAP, ARG0];
+	my $target = (split(',', $channels[0]))[0];
+
+	$kernel->post('pzs-ng', 'privmsg', $target, "\00309$heap->{program}->[POE::Wheel::Run::PROGRAM()]\003: $input");
 }
 
 sub irc_001 {
@@ -99,11 +125,11 @@ sub irc_socketerr {
 }
 
 sub irc_public {
-	my ($kernel, $hostmask, $target, $msg) = @_[KERNEL, ARG0, ARG1, ARG2];
+	my ($kernel, $heap, $hostmask, $target, $msg) = @_[KERNEL, HEAP, ARG0, ARG1, ARG2];
 	$target = $target->[0];
-	if ($target ne (split(',', $channels[0]))[0]) { return; }
 	my $from = $hostmask; $from =~ s/^([^!]+)!.*$/$1/;
 	if ($msg =~ /^$nick[,;:]\s+(\S+) (?:is|=) (.*)$/i) {
+		if ($target ne (split(',', $channels[0]))[0]) { return; }
 		my ($factoid, $def) = (lc($1), $2);
 		$factoids{$factoid} = $def;
 		my $reply = $fact_added[rand(scalar @fact_added)];
@@ -112,6 +138,7 @@ sub irc_public {
 		$reply =~ s/\$fact/$factoid/g;
 		$kernel->post('pzs-ng', 'privmsg', $target, $reply);
 	} elsif ($msg =~ /^$nick[,;:]\s+(\S+) (?:isreg(?:ex(?:ed)?)?|is~|=~) s\/(.+)(?<!\\)\/(.*)\/(g?)$/i) {
+		if ($target ne (split(',', $channels[0]))[0]) { return; }
 		my ($factoid, $match, $rep, $flags) = ($1, $2, $3, $4);
 		if (defined($factoids{$factoid})) {
 			$rep =~ s/\\\//\//g;
@@ -136,6 +163,7 @@ sub irc_public {
 			$kernel->post('pzs-ng', 'privmsg', $target, $reply);
 		}
 	} elsif ($msg =~ /^$nick[,;:]\s+forget\s+about\s+(\S+)$/i) {
+		if ($target ne (split(',', $channels[0]))[0]) { return; }
 		my $factoid = lc($1);
 		if (defined($factoids{$factoid})) {
 			delete $factoids{$factoid};
@@ -151,6 +179,66 @@ sub irc_public {
 			$reply =~ s/\$fact/$factoid/g;
 			$kernel->post('pzs-ng', 'privmsg', $target, $reply);
 		}			
+	} elsif ($msg =~ /^$nick[,;:]\s+make\s+r?(\d+)\s+(stable|testing|unstable)[.!]?$/) {
+		if ($target ne (split(',', $channels[0]))[0]) { return; }
+		chdir("/www/scripts/template-mirror/");
+		open(MAKE_TARBALL, "./make_tarball.sh $1 $2|");
+		while (<MAKE_TARBALL>) {
+			$kernel->post('pzs-ng', 'privmsg', $target, "\00309make_tarball.sh\003 * $_");
+		}
+		close(MAKE_TARBALL);
+	} elsif ($msg =~ /^$nick[,;:]\s+test[.!? ]*$/i) {
+		$kernel->post('pzs-ng', 'privmsg', $target, "\00309test\003 * This should come instantly (but probably doesn't. fuck me hard)");
+		sleep(10);
+	} elsif ($msg =~ /^$nick[,;:]\s+sync(.*?)[.!]?$/) {
+		if ($target ne (split(',', $channels[0]))[0]) { return; }
+		my $time = time();
+		chdir("/www/scripts/template-mirror/");
+		$heap->{program} = POE::Wheel::Run->new (
+			Program => './tm.pl',
+			ProgramArgs => [split(/ /, $1)],
+			StdoutEvent => "child_stdout",
+			StdoutFilter => POE::Filter::Line->new()
+		);
+	} elsif ($msg =~ /^$nick[,;:]\s+r?(\d+)\s+(is no longer|is not|isn't|isnt|ain't)\s+(stable|testing|unstable)[.!]?$/) {
+		if ($target ne (split(',', $channels[0]))[0]) { return; }
+		my ($revision, $type) = ($1, $3);
+		chdir("/www/scripts/template-mirror/");
+		if (! -f "files/$type/r${revision}_pzs-ng.tar.gz") {
+			$kernel->post('pzs-ng', 'privmsg', $target, "$from, heh, r$revision isn't $type, so can't really change it ;)");
+		} else {
+			unlink("files/$type/r${revision}_pzs-ng.tar.gz");
+			$kernel->post('pzs-ng', 'privmsg', $target, "$from, r$revision isn't $type any more. ;)");
+		}
+	} elsif ($msg =~ /^$nick[,;:]\s+files\s+(in|who are|which are|whom are)\s+(stable|testing|unstable)\??\s*$/) {
+		my $type = $2;
+		my (@revisions, %revinfo);
+		chdir("/www/scripts/template-mirror/");
+		opendir(FILES, "files/$type");
+		while ((my $entry = readdir(FILES))) {
+			if (! -f "files/$type/$entry") { next; }
+			if ($entry !~ /^r(\d+)_pzs-ng(-([^.]+))?\.tar\.gz$/) { next; }
+			push(@revisions, $1);
+			if (defined($3)) { $revinfo{$1} = $3 };
+		}
+		closedir(FILES);
+
+		if (!@revisions) {
+			$kernel->post('pzs-ng', 'privmsg', $target, "$from, no files are marked as $type.");
+		} else {
+			my @tmprevisions;
+			foreach my $revision (sort {$a <=> $b} @revisions) {
+				push (@tmprevisions, "$revision" . (exists($revinfo{$revision}) ? " ($revinfo{$revision})" : ''));
+				if (@tmprevisions >= 5) {
+					$kernel->post('pzs-ng', 'privmsg', $target, "\00309$type\003 * " . join(', ', @tmprevisions) .".");
+					undef @tmprevisions;
+				}
+			}
+
+			if (@tmprevisions) {
+				$kernel->post('pzs-ng', 'privmsg', $target, "\00309$type\003 * " . join(', ', @tmprevisions) .".");
+			}
+		}		
 	} elsif ($msg =~ /^$nick[,;:]\s+([^\? ]+)(?:\s+([^\?]+))?\?*$/i) {
 		my $factoid = lc($1);
 		my $arg = $2;
@@ -162,11 +250,11 @@ sub irc_public {
 		} elsif ($factoid =~ /^(factstats?|stats?)$/i) {
 			$kernel->post('pzs-ng', 'privmsg', $target, 
 "$from, I know ". scalar keys(%factoids) ." different keywords, and their facts equal ". length(join('', values %factoids )) ." characters! :)"); 
-		} elsif ($factoid =~ /^rinfo$/i) {
+		} elsif ($factoid =~ /^(rinfo|info)$/i) {
 			my $revision = $arg;
 			if (!defined($arg)) { $revision = $youngest; }
 			if ($revision !~ /^\d+$/ || $revision > $youngest || $revision < 1) {
-				$kernel->post('pzs-ng', 'privmsg', (split(',', $channels[0]))[0], "$from, r$revision is an invalid revision-number.");
+				$kernel->post('pzs-ng', 'privmsg', $target, "$from, '$revision' is an invalid revision-number.");
 			} else {
 				my $output = `svnlook log -r $revision $repository`;
 				my $author = `svnlook author -r $revision $repository`;
@@ -174,11 +262,12 @@ sub irc_public {
 				my @files = split("\n", `svnlook changed -r $revision $repository|awk '{print \$2}'`);
 				my (%changed, $chprefix);
 				foreach my $dir (@dirs) {
-					for my $i (0 .. $#files) {
-						if ($files[$i] =~ /^$dir/) { 
-							$files[$i] =~ s/^$dir//;
-							push(@{$changed{$dir}}, $files[$i]);
-							undef $files[$i];
+					if (!@files) { last; }
+					foreach my $file (@files) {
+						if (defined($file) && $file =~ /^$dir/) { 
+							$file =~ s/^$dir//;
+							push(@{$changed{$dir}}, $file);
+							undef $file;
 						}
 					}
 				}
@@ -200,7 +289,7 @@ sub irc_public {
 				$chprefix =~ s/, $//;
 
 				$output =~ s/[\r\n]+/ /g; $author =~ s/[\r\n]+//g;
-				$kernel->post('pzs-ng', 'privmsg', (split(',', $channels[0]))[0], "\00303$author\003 * r$revision $chprefix\002:\002 $output");
+				$kernel->post('pzs-ng', 'privmsg', $target, "\00303$author\003 * r$revision $chprefix\002:\002 $output");
 			}
 		} else {
 			if (defined($factoids{$factoid})) {
@@ -250,6 +339,12 @@ sub tick {
 			my @output = split("\n", `svnlook log -r $revision $repository`);
 			my @files = split("\n", `svnlook changed -r $revision $repository|awk '{print \$2}'`);
 #			my @files = split("\n", `svnlook changed -r $revision $repository`);
+			foreach my $file (@files) {
+				$file =~ s/^(.*?)trunk\///;
+				if ($file =~ /^\s*$/) { $file = '/'; }
+			}
+			my $filemsg = join(", ", @files);
+				
 
 			$author =~ s/[\r\n]+//g;
 			foreach my $chan (@channels) {
@@ -257,9 +352,6 @@ sub tick {
 				my $commitmsgs = join("\002' & '\002", @output);
 				$commitmsgs = "'\002" . $commitmsgs . "\002'";
 
-				foreach my $file (@files) { $file =~ s/^(.*?)trunk\///; }
-				my $filemsg = join(", ", @files);
-				
 				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303svn\003 commit by \00303$author\003 \002*\002 r\002$revision\002: $commitmsgs");
 				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303svn\003 files: $filemsg");
 #				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303-------\003 \002SVNCOMMiT\002 \00303-------\003");
@@ -281,7 +373,7 @@ sub tick {
 #				}
 			}
 		}
-		$youngest = $ryoungest;
+		$youngest = $ryoungest;1
 	}
 		
     $kernel->delay('tick', $polltime);
@@ -298,11 +390,9 @@ if (!defined($pid)) {
 }
 
 POE::Component::IRC->new('pzs-ng') or die "Oh noooo! $!";
-POE::Session->new( 'main' => [qw(_start _stop irc_001 irc_disconnected irc_error irc_socketerr irc_public irc_ctcp_version tick)]);
+POE::Session->new( 'main' => [qw(_start _stop irc_001 irc_disconnected irc_error irc_socketerr irc_public irc_ctcp_version tick child_stdout sigchld)]);
 $poe_kernel->run();
 
 untie %factoids;
 
 exit 0;
-
-# sussman adding a comment.  and another one.
