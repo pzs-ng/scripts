@@ -181,11 +181,10 @@ sub irc_public {
 							undef $files[$i];
 						}
 					}
-					if (!@{$changed{$dir}}) { push(@{$changed{$dir}}, ''); }
 				}
 				$chprefix = '';
 				foreach my $dir (keys %changed) {
-					if (@{$changed{$dir}} == 1) { 
+					if (exists($changed{$dir}) && @{$changed{$dir}} == 1) { 
 							(my $tmp = $dir) =~ s/^(.*?)trunk\///;
 							$chprefix .= "$tmp" . $changed{$dir}[0];
 					} else {
@@ -247,42 +246,30 @@ sub tick {
 		while ($x < ($ryoungest - $youngest)) {
 			$x++;
 			my $revision = $youngest + $x;
-			my $output = `svnlook log -r $revision $repository`;
 			my $author = `svnlook author -r $revision $repository`;
-			my @dirs = split("\n", `svnlook dirs-changed -r $revision $repository`);
-			my @files = split("\n", `svnlook changed -r $revision $repository|awk '{print \$2}'`);
-			my (%changed, $chprefix);
-			foreach my $dir (@dirs) {
-				for my $i (0 .. $#files) {
-					if ($files[$i] =~ /^$dir/) { 
-						$files[$i] =~ s/^$dir//;
-						push(@{$changed{$dir}}, $files[$i]);
-						undef $files[$i];
-					}
-				}
-				if (!@{$changed{$dir}}) { push(@{$changed{$dir}}, ''); }
-			}
-			$chprefix = '';
-			foreach my $dir (keys %changed) {
-				if (@{$changed{$dir}} == 1) { 
-						(my $tmp = $dir) =~ s/^(.*?)trunk\///;
-						$chprefix .= "$dir" . $changed{$dir}[0];
-				} else {
-					(my $tmp = $dir) =~ s/^(.*?)trunk\///;
-					$chprefix .= "$tmp: ";
-					foreach my $file (@{$changed{$dir}}) {
-						$chprefix .= "$file "
-					}
-					$chprefix =~ s/ $//;
-				}
-				$chprefix .= ', ';
-			}
-			$chprefix =~ s/, $//;
-					
-			$output =~ s/[\r\n]+/ /g; $author =~ s/[\r\n]+//g;
+			my @output = split("\n", `svnlook log -r $revision $repository`);;
+			my @files = split("\n", `svnlook changed -r $revision $repository`);
+
+			$author =~ s/[\r\n]+//g;
 			foreach my $chan (@channels) {
 				my $channel = (split(',', $chan))[0];
-				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303$author\003 * r$revision $chprefix\002:\002 $output");
+				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303-------\003 SVNCOMMiT \00303-------\003");
+				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303--\003 Author: $author Revision: $revision");
+				foreach my $line (@output) {
+					$kernel->post('pzs-ng', 'privmsg', $channel, "\00303- $line");
+				}
+
+				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303-----\003 CHANGED FiLES \00303-----\003");
+				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303--\003 ". scalar @files ." file(s)");
+				my $i = 0;
+				foreach my $file (@files) {
+					$i++;
+					$kernel->post('pzs-ng', 'privmsg', $channel, "\00303-\003 $file");
+					if ($i > 5 && @files >= $i + 2) { last; }
+				}
+				if ($i < @files) {
+					$kernel->post('pzs-ng', 'privmsg', $channel, "\00303-\003 (". @files - $i ." file(s) not shown)");
+				}
 			}
 		}
 		$youngest = $ryoungest;
