@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############## ############## ############## ############## ############## ######## #### ## #
 # total-rescan (c) daxxar ^ team pzs-ng <daxxar@mental.mine.nu> 
-#  - version 1.2rc2
+#  - version 1.2
 #
 
 #.########################################################################,
@@ -39,8 +39,12 @@
 #  
 # changelog:
 #  from 1.1
-#  + rmlog.sh-generate feature. :-)
+#  + rmlog.sh-generate feature. :-) (script to remove all failed dirs)
 #  * rmlog.sh generated in / now. :)
+#  * rmlog.sh now generates newlines, and fixed a broken conditional :)
+#  * total-rescan actually (perhaps) works. (note to self: rescan always
+#    returns null, no matter what)
+#  ! rmlog.sh is cleaned out at start of run, and prints two lines. ;)
 #
 #  from 1.0
 #   ! output messages
@@ -63,7 +67,7 @@ use warnings;
 use strict;
 
 my $rescan = 'bin/rescan'; # Change if you've moved it / using another rescanner.
-my $version = '.2rc2';
+my $version = '.2';
 my $rmscript = 'rmlog.sh';	# Generates 'rmlog.sh' in currentdir, containing rm -rf "$dir" on all failed rels.
 							# Set to '' to disable this feature. ;-)
 
@@ -133,15 +137,22 @@ sub rescandirs {
 			next;
 		}
 
-		if (system('/bin/rescan')) {
-			print STDERR "- FAILED: $dir (retcode: ". ($? >> 8) .")\n";
-			if (defined($rmscript) & $rmscript ne '') {
+		my $output = `/bin/rescan`;
+		my ($passed, $total) = (-1, -1);
+		if ($output =~ /Passed ?: ?(\d+)$/m) { $passed = $1; }
+		if ($output =~ /Total ?: ?(\d+)$/m) { $total = $1; }
+		
+		if ($passed == -1 || $total == -1) {
+			print "- ERROR! Output from /bin/rescan on '$dir' was unparseable. (Nonstandard rescan binary?)\n";
+		} elsif ($passed == $total) {
+			print "+ PASSED: $dir\n";
+		} else {
+			print STDERR "- FAILED: $dir\n";
+			if (defined($rmscript) && $rmscript ne '') {
 				open(RMLOG, '>>', "/$rmscript");
-				print RMLOG "rm -rf '$dir'";
+				print RMLOG "rm -rf '$glroot$dir'\n";
 				close(RMLOG);
 			}
-		} else {
-			print "+ PASSED: $dir\n";
 		}
 		
 		chdir('/');
@@ -158,6 +169,11 @@ if (!chdir('/')) {
 	exit 1;
 }
 
+print "+ Cleaning rmscript (/$rmscript)\n";
+open(RMLOG, '>', "/$rmscript");
+print RMLOG "echo '* Starting deletion of failed dirs.. :)'\n";
+close(RMLOG);
+
 print "+ Caching directories recursively.\n";
 my @dirs = getdirs($path);
 
@@ -170,5 +186,10 @@ if (!@sfvdirs) {
 
 print "+ Rescanning all dirs.\n";
 rescandirs(@sfvdirs);
+
+print "+ Adding 'closing entry' to rmscript ;)\n";
+open(RMLOG, '>', "/$rmscript");
+print RMLOG "echo '* All done with deletion! :D'\n";
+close(RMLOG);
 
 print "+ Done! :)\n";
