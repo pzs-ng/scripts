@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############## ############## ############## ############## ############## ######## #### ## #
 # total-rescan (c) daxxar ^ team pzs-ng <daxxar@mental.mine.nu> 
-#  - version 1.2rc1
+#  - version 1.2rc2
 #
 
 #.########################################################################,
@@ -40,6 +40,7 @@
 # changelog:
 #  from 1.1
 #  + rmlog.sh-generate feature. :-)
+#  * rmlog.sh generated in / now. :)
 #
 #  from 1.0
 #   ! output messages
@@ -62,7 +63,7 @@ use warnings;
 use strict;
 
 my $rescan = 'bin/rescan'; # Change if you've moved it / using another rescanner.
-my $version = '.2rc1';
+my $version = '.2rc2';
 my $rmscript = 'rmlog.sh';	# Generates 'rmlog.sh' in currentdir, containing rm -rf "$dir" on all failed rels.
 							# Set to '' to disable this feature. ;-)
 
@@ -135,7 +136,7 @@ sub rescandirs {
 		if (system('/bin/rescan')) {
 			print STDERR "- FAILED: $dir (retcode: ". ($? >> 8) .")\n";
 			if (defined($rmscript) & $rmscript ne '') {
-				open(RMLOG, '>>', $rmscript);
+				open(RMLOG, '>>', "/$rmscript");
 				print RMLOG "rm -rf '$dir'";
 				close(RMLOG);
 			}
