@@ -78,13 +78,14 @@ print "+ Starting total rescan v1$version by daxxar ^ team pzs-ng.\n";
 my $path = shift;
 my $glroot = shift || '/glftpd';
 $glroot =~ s/(?<!\/)$/\//;
-$path =~ s/\/$//;
 
 if (!defined($path)) {
 	print STDERR "- Path to scan not defined, exiting.\n";
 	print STDERR "  (syntax: $0 <path> [glroot], path is relative to glroot)\n";
 	exit 1;
 }
+
+$path =~ s/\/$//;
 
 if (! -d "${glroot}/${path}") {
 	print STDERR "- Could not start total-rescan on '${glroot}${path}', dir does not exist!\n";
