@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############## ############## ############## ############## ############## ######## #### ## #
-# total-rescan (c) daxxar ^ team pzs-ng <daxxar@mental.mine.nu> 
-#  - version 1.3 rc2
+# total-rescan (c) daxxar ^ team pzs-ng <daxxar@daxxar.com> 
+#  - version 1.3 rc3
 #
 
 #.########################################################################,
@@ -40,6 +40,7 @@
 # changelog:
 #  from 1.2
 #  * rmlog.sh was accidentally overwritten at end of script, fixed. 
+#  ! didn't work with perl 5.005, switched to -w and two-argument open()
 #
 #  from 1.1
 #  + rmlog.sh-generate feature. :-) (script to remove all failed dirs)
@@ -63,13 +64,13 @@
 #  -    removed
 #  *    bugfix
 #  !    change
-# (please, report bugs and / or send feature requests to daxxar@mental.mine.nu)
+# (please, report bugs and / or send feature requests to daxxar@daxxar.com)
 ############## ############## ############## ############## ############## ######## #### ## #
 
 use strict;
 
 my $rescan = 'bin/rescan'; # Change if you've moved it / using another rescanner.
-my $version = '.3 rc2';
+my $version = '.3 rc3';
 my $rmscript = 'rmlog.sh';	# Generates 'rmlog.sh' in currentdir, containing rm -rf "$dir" on all failed rels.
 							# Set to '' to disable this feature. ;-)
 
