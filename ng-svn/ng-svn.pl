@@ -111,9 +111,11 @@ sub irc_public {
 		$reply =~ s/\$me/$nick/g;
 		$reply =~ s/\$fact/$factoid/g;
 		$kernel->post('pzs-ng', 'privmsg', $target, $reply);
-	} elsif ($msg =~ /^$nick[,;:]\s+(\S+) (?:isreg(?:ex(?:ed)?)?|is~|=~) s\/(.+)\/(.*)\/(g?)$/i) {
+	} elsif ($msg =~ /^$nick[,;:]\s+(\S+) (?:isreg(?:ex(?:ed)?)?|is~|=~) s\/(.+)(?<!\\)\/(.*)\/(g?)$/i) {
 		my ($factoid, $match, $rep, $flags) = ($1, $2, $3, $4);
 		if (defined($factoids{$factoid})) {
+			$rep =~ s/\\\//\//g;
+			$match =~ s/\\\//\//g;
 			eval {
 				$factoids{$factoid} =~ s/$match/$rep/g if $flags eq 'g';
 				$factoids{$factoid} =~ s/$match/$rep/  unless $flags eq 'g';
@@ -168,8 +170,38 @@ sub irc_public {
 			} else {
 				my $output = `svnlook log -r $revision $repository`;
 				my $author = `svnlook author -r $revision $repository`;
+				my @dirs = split("\n", `svnlook dirs-changed -r $revision $repository`);
+				my @files = split("\n", `svnlook changed -r $revision $repository|awk '{print \$2}'`);
+				my (%changed, $chprefix);
+				foreach my $dir (@dirs) {
+					for my $i (0 .. $#files) {
+						if ($files[$i] =~ /^$dir/) { 
+							$files[$i] =~ s/^$dir//;
+							push(@{$changed{$dir}}, $files[$i]);
+							undef $files[$i];
+						}
+					}
+					if (!@{$changed{$dir}}) { push(@{$changed{$dir}}, ''); }
+				}
+				$chprefix = '';
+				foreach my $dir (keys %changed) {
+					if (@{$changed{$dir}} == 1) { 
+							(my $tmp = $dir) =~ s/^(.*?)trunk\///;
+							$chprefix .= "$tmp" . $changed{$dir}[0];
+					} else {
+						(my $tmp = $dir) =~ s/^(.*?)trunk\///;
+						$chprefix .= "$tmp: ";
+						foreach my $file (@{$changed{$dir}}) {
+							$chprefix .= "$file "
+						}
+						$chprefix =~ s/ $//;
+					}
+					$chprefix .= ', ';
+				}
+				$chprefix =~ s/, $//;
+
 				$output =~ s/[\r\n]+/ /g; $author =~ s/[\r\n]+//g;
-				$kernel->post('pzs-ng', 'privmsg', (split(',', $channels[0]))[0], "\00303$author\003 * r$revision\002:\002 $output");
+				$kernel->post('pzs-ng', 'privmsg', (split(',', $channels[0]))[0], "\00303$author\003 * r$revision $chprefix\002:\002 $output");
 			}
 		} else {
 			if (defined($factoids{$factoid})) {
@@ -217,10 +249,40 @@ sub tick {
 			my $revision = $youngest + $x;
 			my $output = `svnlook log -r $revision $repository`;
 			my $author = `svnlook author -r $revision $repository`;
+			my @dirs = split("\n", `svnlook dirs-changed -r $revision $repository`);
+			my @files = split("\n", `svnlook changed -r $revision $repository|awk '{print \$2}'`);
+			my (%changed, $chprefix);
+			foreach my $dir (@dirs) {
+				for my $i (0 .. $#files) {
+					if ($files[$i] =~ /^$dir/) { 
+						$files[$i] =~ s/^$dir//;
+						push(@{$changed{$dir}}, $files[$i]);
+						undef $files[$i];
+					}
+				}
+				if (!@{$changed{$dir}}) { push(@{$changed{$dir}}, ''); }
+			}
+			$chprefix = '';
+			foreach my $dir (keys %changed) {
+				if (@{$changed{$dir}} == 1) { 
+						(my $tmp = $dir) =~ s/^(.*?)trunk\///;
+						$chprefix .= "$dir" . $changed{$dir}[0];
+				} else {
+					(my $tmp = $dir) =~ s/^(.*?)trunk\///;
+					$chprefix .= "$tmp: ";
+					foreach my $file (@{$changed{$dir}}) {
+						$chprefix .= "$file "
+					}
+					$chprefix =~ s/ $//;
+				}
+				$chprefix .= ', ';
+			}
+			$chprefix =~ s/, $//;
+					
 			$output =~ s/[\r\n]+/ /g; $author =~ s/[\r\n]+//g;
 			foreach my $chan (@channels) {
 				my $channel = (split(',', $chan))[0];
-				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303$author\003 * r$revision\002:\002 $output");
+				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303$author\003 * r$revision $chprefix\002:\002 $output");
 			}
 		}
 		$youngest = $ryoungest;
