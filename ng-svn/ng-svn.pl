@@ -260,8 +260,8 @@ sub tick {
 				foreach my $file (@files) { $file =~ s/^(.*?)trunk\///; }
 				my $filemsg = join(", ", @files);
 				
-				$kernel->post('pzs-ng', 'privmsg', $channel, "svn commit by \00303$author\003, \00303r\00303$revision: $commitmsgs");
-				$kernel->post('pzs-ng', 'privmsg', $channel, "svn files: $filemsg");
+				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303svn\003 commit by \00303$author\003, \00303r\003$revision: $commitmsgs");
+				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303svn\003 files: $filemsg");
 #				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303-------\003 \002SVNCOMMiT\002 \00303-------\003");
 #				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303--\003 Author: $author Revision: $revision");
 #				foreach my $line (@output) {
