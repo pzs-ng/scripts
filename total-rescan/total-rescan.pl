@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 ############## ############## ############## ############## ############## ######## #### ## #
-# total-rescan (c) daxxar ^ pzs-ng <daxxar@mental.mine.nu> 
+# total-rescan (c) daxxar ^ team pzs-ng <daxxar@mental.mine.nu> 
 #  - version 1.0
 #
 
@@ -28,8 +28,9 @@
 #   ./total-rescan.pl PATH-I-WANT-TO-RESCAN GLFTPD-ROOT-DIRECTORY
 #  GLFTPD-ROOT-DIRECTORY is optional, defaults to /glftpd (should be ok for most people).
 #  PATH-I-WANT-TO-RESCAN is RELATIVE to GLFTPD-ROOT-DIRECTORY, so if you do this:
-#  ./total-rescan.pl games
-#  it will rescan /glftpd/games/, and not games/.
+#  ./total-rescan.pl site/games
+#  it will rescan /glftpd/site/games/, and not ./site/games/.
+#  morale is: remember to include site/-prefix, if you need it. :-) (thanks _-] :)
 #  
 # history:
 #  version 1 is a full rewrite of total-rescan 0.x,
@@ -37,6 +38,11 @@
 #  the least i could do ;) 
 #  
 # changelog:
+#  from 1.0
+#   ! output messages
+#   * not working due to no chdir to / after chroot
+#   - check for absolute path
+#
 #  from 0.x
 #   ! full rewrite
 #
@@ -59,16 +65,10 @@ print "+ Starting total rescan v1$version by daxxar ^ team pzs-ng.\n";
 my $path = shift;
 my $glroot = shift || '/glftpd';
 $glroot =~ s/(?<!\/)$/\//;
+$path =~ s/\/$//;
 
 if (!defined($path)) {
 	print STDERR "- Path to scan not defined, exiting.\n";
-	print STDERR "  (syntax: $0 <path> [glroot], path is relative to glroot)\n";
-	exit 1;
-}
-
-if ($path =~ /^\//) {
-	print STDERR "- Could not start total-rescan on '$path', no absolute paths!\n";
-	print STDERR "  (paths are always relative to glroot, (in this case: '$glroot')\n";
 	print STDERR "  (syntax: $0 <path> [glroot], path is relative to glroot)\n";
 	exit 1;
 }
@@ -84,7 +84,7 @@ sub getdirs {
 	my @dirs = @dlist;
 	while ((my $dir = shift @dirs)) {
 		if (!opendir(DIR, $dir)) {
-			print STDERR "- Opendir on $dir failed, skipping! ($!)\n";
+			print STDERR "- Opening directtory '$dir' for reading failed, skipping! ($!)\n";
 			next;
 		}
 		while (($_ = readdir(DIR))) {
@@ -102,7 +102,7 @@ sub getsfvdirs {
 	my @sfvdlist;
 	DIR: foreach my $dir (@dlist) {
 		if (!opendir(DIR, $dir)) {
-			print STDERR "- Opendir on $dir failed, skipping! ($!)\n";
+			print STDERR "- Opening directory '$dir' for reading failed, skipping! ($!)\n";
 			next;
 		}
 		
@@ -122,7 +122,7 @@ sub recandirs {
 	my @dirs = @_;
 	foreach my $dir (@dirs) {
 		if (!chdir($dir)) {
-			print STDERR "- Chdir on $dir failed, skipping! ($!)\n";
+			print STDERR "- Changing dir to '$dir' failed, skipping! ($!)\n";
 			next;
 		}
 
@@ -136,19 +136,23 @@ sub recandirs {
 	}
 }
 
-print "+ Chrooting script to $glroot.\n";
+print "+ Changing root for script to '$glroot' and changing dir to '/'.\n";
 if (!chroot($glroot)) {
-	print STDERR "- Chroot failed! ($!)\n";
+	print STDERR "- Changing root failed! ($!)\n";
+	exit 1;
+}
+if (!chdir('/')) {
+	print STDERR "- WTF? Changing dir to '/' failed! ($!)\n";
 	exit 1;
 }
 
-print "+ Fetching directories recursively.\n";
+print "+ Caching directories recursively.\n";
 my @dirs = getdirs($path);
 
-print "+ Finding what dirs contain one (or more) sfv-file(s).\n";
+print "+ Scanning dirs for sfv-files.\n";
 my @sfvdirs = getsfvdirs(@dirs);
 if (!@sfvdirs) {
-	print STDERR "! Could not find any dirs containing SFVs under '$path', exiting.\n";
+	print STDERR "! Could not find any dirs containing any SFVs under '$path', exiting.\n";
 	exit 1;
 }
 
