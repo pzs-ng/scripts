@@ -185,11 +185,11 @@ sub irc_public {
 				$chprefix = '';
 				foreach my $dir (keys %changed) {
 					if (exists($changed{$dir}) && @{$changed{$dir}} == 1) { 
-							(my $tmp = $dir) =~ s/^(.*?)trunk\///;
-							$chprefix .= "$tmp" . $changed{$dir}[0];
+							(my $tmp = $dir) =~ s/^(.*?)trunk//;
+							$chprefix .= "\002$tmp\002" . $changed{$dir}[0];
 					} else {
-						(my $tmp = $dir) =~ s/^(.*?)trunk\///;
-						$chprefix .= "$tmp: ";
+						(my $tmp = $dir) =~ s/^(.*?)trunk//;
+						$chprefix .= "\002$tmp\002: ";
 						foreach my $file (@{$changed{$dir}}) {
 							$chprefix .= "$file "
 						}
