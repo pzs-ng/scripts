@@ -247,29 +247,38 @@ sub tick {
 			$x++;
 			my $revision = $youngest + $x;
 			my $author = `svnlook author -r $revision $repository`;
-			my @output = split("\n", `svnlook log -r $revision $repository`);;
-			my @files = split("\n", `svnlook changed -r $revision $repository`);
+			my @output = split("\n", `svnlook log -r $revision $repository`);
+			my @files = split("\n", `svnlook changed -r $revision $repository|awk '{print \$2}'`);
+#			my @files = split("\n", `svnlook changed -r $revision $repository`);
 
 			$author =~ s/[\r\n]+//g;
 			foreach my $chan (@channels) {
 				my $channel = (split(',', $chan))[0];
-				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303-------\003 \002SVNCOMMiT\002 \00303-------\003");
-				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303--\003 Author: $author Revision: $revision");
-				foreach my $line (@output) {
-					$kernel->post('pzs-ng', 'privmsg', $channel, "\00303-\003 $line");
-				}
+				my $commitmsgs = join("\002' & '\002", @output);
+				$commitmsgs = "'\002" . $commitmsgs . "\002'";
 
-				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303-----\003 \002CHANGED FiLES\002 \00303-----\003");
-				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303--\003 ". scalar @files ." file(s)");
-				my $i = 0;
-				foreach my $file (@files) {
-					$i++;
-					$kernel->post('pzs-ng', 'privmsg', $channel, "\00303-\003 $file");
-					if ($i > 5 && @files >= $i + 2) { last; }
-				}
-				if ($i < @files) {
-					$kernel->post('pzs-ng', 'privmsg', $channel, "\00303-\003 (". @files - $i ." file(s) not shown)");
-				}
+				foreach my $file (@files) { $file =~ s/^(.*?)trunk\///; }
+				my $filemsg = join(", ", @files);
+				
+				$kernel->post('pzs-ng', 'privmsg', $channel, "svn commit by \00303$author\003, \00303r\00303$revision: $commitmsgs");
+				$kernel->post('pzs-ng', 'privmsg', $channel, "svn files: $filemsg");
+#				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303-------\003 \002SVNCOMMiT\002 \00303-------\003");
+#				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303--\003 Author: $author Revision: $revision");
+#				foreach my $line (@output) {
+#					$kernel->post('pzs-ng', 'privmsg', $channel, "\00303-\003 $line");
+#				}
+#
+#				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303-----\003 \002CHANGED FiLES\002 \00303-----\003");
+#				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303--\003 ". scalar @files ." file(s)");
+#				my $i = 0;
+#				foreach my $file (@files) {
+#					$i++;
+#					$kernel->post('pzs-ng', 'privmsg', $channel, "\00303-\003 $file");
+#					if ($i > 5 && @files >= $i + 2) { last; }
+#				}
+#				if ($i < @files) {
+#					$kernel->post('pzs-ng', 'privmsg', $channel, "\00303-\003 (". @files - $i ." file(s) not shown)");
+#				}
 			}
 		}
 		$youngest = $ryoungest;
