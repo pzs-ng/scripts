@@ -1,7 +1,7 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -w
 ############## ############## ############## ############## ############## ######## #### ## #
 # total-rescan (c) daxxar ^ team pzs-ng <daxxar@mental.mine.nu> 
-#  - version 1.3 rc1
+#  - version 1.3 rc2
 #
 
 #.########################################################################,
@@ -66,11 +66,10 @@
 # (please, report bugs and / or send feature requests to daxxar@mental.mine.nu)
 ############## ############## ############## ############## ############## ######## #### ## #
 
-use warnings;
 use strict;
 
 my $rescan = 'bin/rescan'; # Change if you've moved it / using another rescanner.
-my $version = '.3 rc1';
+my $version = '.3 rc2';
 my $rmscript = 'rmlog.sh';	# Generates 'rmlog.sh' in currentdir, containing rm -rf "$dir" on all failed rels.
 							# Set to '' to disable this feature. ;-)
 
@@ -152,7 +151,7 @@ sub rescandirs {
 		} else {
 			print STDERR "- FAILED: $dir\n";
 			if (defined($rmscript) && $rmscript ne '') {
-				open(RMLOG, '>>', "/$rmscript");
+				open(RMLOG, ">>/$rmscript");
 				print RMLOG "rm -rf '$glroot$dir'\n";
 				close(RMLOG);
 			}
@@ -173,7 +172,7 @@ if (!chdir('/')) {
 }
 
 print "+ Cleaning rmscript (/$rmscript)\n";
-open(RMLOG, '>', "/$rmscript");
+open(RMLOG, ">/$rmscript");
 print RMLOG "echo '* Starting deletion of failed dirs.. :)'\n";
 close(RMLOG);
 
@@ -191,7 +190,7 @@ print "+ Rescanning all dirs.\n";
 rescandirs(@sfvdirs);
 
 print "+ Adding 'closing entry' to rmscript ;)\n";
-open(RMLOG, '>>', "/$rmscript");
+open(RMLOG, ">>/$rmscript");
 print RMLOG "echo '* All done with deletion! :D'\n";
 close(RMLOG);
 
