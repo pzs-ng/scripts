@@ -41,6 +41,7 @@
 #  from 1.0
 #   ! output messages
 #   * not working due to no chdir to / after chroot
+#   * not working due to a misnamed sub (recandirs, not rescandirs)
 #   - check for absolute path
 #
 #  from 0.x
@@ -118,7 +119,7 @@ sub getsfvdirs {
 	return @sfvdlist;
 }
 
-sub recandirs {
+sub rescandirs {
 	my @dirs = @_;
 	foreach my $dir (@dirs) {
 		if (!chdir($dir)) {
