@@ -9,7 +9,7 @@ use AnyDBM_File;
 
 my $nick        = 'pzs-ng';
 my $server      = 'irc.homelien.no:6667';
-my $channel     = '#project-zs-ng';
+my @channels    = ('#project-zs-ng,pzsdev', '#pzs-ng');
 my $realname    = 'p-zs-ng - SVN Slave.';
 my $username    = 'pzs-ng';
 my $polltime    = 5;
@@ -73,10 +73,14 @@ sub _stop {
 }
 
 sub irc_001 {
-    my $kernel = $_[KERNEL];
-	
-	$kernel->post('pzs-ng', 'join', $channel);
-    $kernel->post('pzs-ng', 'mode', $nick, '+i' );
+	my $kernel = $_[KERNEL];
+
+	foreach my $chan (@channels) {
+		my ($channel, $key) = split(',', $chan);
+		if (defined($key)) { $kernel->post('pzs-ng', 'join', $channel, $key);
+		} else { $kernel->post('pzs-ng', 'join', $channel); }
+	}
+	$kernel->post('pzs-ng', 'mode', $nick, '+i' );
 }
 
 sub irc_disconnected {
@@ -95,8 +99,9 @@ sub irc_socketerr {
 }
 
 sub irc_public {
-    my ($kernel, $hostmask, $target, $msg) = @_[KERNEL, ARG0, ARG1, ARG2];
-    $target = $target->[0];
+	my ($kernel, $hostmask, $target, $msg) = @_[KERNEL, ARG0, ARG1, ARG2];
+	$target = $target->[0];
+	if ($target ne (split(',', $channels[0]))[0]) { return; }
 	my $from = $hostmask; $from =~ s/^([^!]+)!.*$/$1/;
 	if ($msg =~ /^$nick[,;:]\s+(\S+) (?:is|=) (.*)$/i) {
 		my ($factoid, $def) = (lc($1), $2);
@@ -150,21 +155,21 @@ sub irc_public {
 		if ($factoid =~ /^uptime$/i) {
 			my $uptime = time - $started;
 			$kernel->post('pzs-ng', 'privmsg', $target, "$from, I have been running for ". duration($uptime) ." :)");
-		} elsif ($factoid =~ /^revision$/i) {
+		} elsif ($factoid =~ /^(revision|rev)$/i) {
 			$kernel->post('pzs-ng', 'privmsg', $target, "$from, latest revision of pzs-ng is $youngest.");
-		} elsif ($factoid =~ /^factstats?$/i) {
+		} elsif ($factoid =~ /^(factstats?|stats?)$/i) {
 			$kernel->post('pzs-ng', 'privmsg', $target, 
 "$from, I know ". scalar keys(%factoids) ." different keywords, and their facts equal ". length(join('', values %factoids )) ." characters! :)"); 
 		} elsif ($factoid =~ /^rinfo$/i) {
 			my $revision = $arg;
 			if (!defined($arg)) { $revision = $youngest; }
 			if ($revision !~ /^\d+$/ || $revision > $youngest || $revision < 1) {
-				$kernel->post('pzs-ng', 'privmsg', $channel, "$from, r$revision is an invalid revision-number.");
+				$kernel->post('pzs-ng', 'privmsg', (split(',', $channels[0]))[0], "$from, r$revision is an invalid revision-number.");
 			} else {
 				my $output = `svnlook log -r $revision $repository`;
 				my $author = `svnlook author -r $revision $repository`;
 				$output =~ s/[\r\n]+/ /g; $author =~ s/[\r\n]+//g;
-				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303$author\003 * r$revision\002:\002 $output");
+				$kernel->post('pzs-ng', 'privmsg', (split(',', $channels[0]))[0], "\00303$author\003 * r$revision\002:\002 $output");
 			}
 		} else {
 			if (defined($factoids{$factoid})) {
@@ -213,7 +218,10 @@ sub tick {
 			my $output = `svnlook log -r $revision $repository`;
 			my $author = `svnlook author -r $revision $repository`;
 			$output =~ s/[\r\n]+/ /g; $author =~ s/[\r\n]+//g;
-			$kernel->post('pzs-ng', 'privmsg', $channel, "\00303$author\003 * r$revision\002:\002 $output");
+			foreach my $chan (@channels) {
+				my $channel = (split(',', $chan))[0];
+				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303$author\003 * r$revision\002:\002 $output");
+			}
 		}
 		$youngest = $ryoungest;
 	}
