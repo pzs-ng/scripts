@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############## ############## ############## ############## ############## ######## #### ## #
 # total-rescan (c) daxxar ^ team pzs-ng <daxxar@mental.mine.nu> 
-#  - version 1.2
+#  - version 1.3 rc1
 #
 
 #.########################################################################,
@@ -38,6 +38,9 @@
 #  the least i could do ;) 
 #  
 # changelog:
+#  from 1.2
+#  * rmlog.sh was accidentally overwritten at end of script, fixed. 
+#
 #  from 1.1
 #  + rmlog.sh-generate feature. :-) (script to remove all failed dirs)
 #  * rmlog.sh generated in / now. :)
@@ -67,7 +70,7 @@ use warnings;
 use strict;
 
 my $rescan = 'bin/rescan'; # Change if you've moved it / using another rescanner.
-my $version = '.2';
+my $version = '.3 rc1';
 my $rmscript = 'rmlog.sh';	# Generates 'rmlog.sh' in currentdir, containing rm -rf "$dir" on all failed rels.
 							# Set to '' to disable this feature. ;-)
 
@@ -188,7 +191,7 @@ print "+ Rescanning all dirs.\n";
 rescandirs(@sfvdirs);
 
 print "+ Adding 'closing entry' to rmscript ;)\n";
-open(RMLOG, '>', "/$rmscript");
+open(RMLOG, '>>', "/$rmscript");
 print RMLOG "echo '* All done with deletion! :D'\n";
 close(RMLOG);
 
