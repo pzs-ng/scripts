@@ -14,7 +14,7 @@ my $realname    = 'p-zs-ng - SVN Slave.';
 my $username    = 'pzs-ng';
 my $polltime    = 5;
 my $repository  = '/svn/pzs-ng';
-my $factdb	= 'factoids';
+my $factdb		= 'factoids';
 
 my @fact_reply		= (
 	q/$fact is $factoid, $nick./,
