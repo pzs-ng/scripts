@@ -253,13 +253,13 @@ sub tick {
 			$author =~ s/[\r\n]+//g;
 			foreach my $chan (@channels) {
 				my $channel = (split(',', $chan))[0];
-				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303-------\003 SVNCOMMiT \00303-------\003");
+				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303-------\003 \002SVNCOMMiT\002 \00303-------\003");
 				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303--\003 Author: $author Revision: $revision");
 				foreach my $line (@output) {
-					$kernel->post('pzs-ng', 'privmsg', $channel, "\00303- $line");
+					$kernel->post('pzs-ng', 'privmsg', $channel, "\00303-\003 $line");
 				}
 
-				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303-----\003 CHANGED FiLES \00303-----\003");
+				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303-----\003 \002CHANGED FiLES\002 \00303-----\003");
 				$kernel->post('pzs-ng', 'privmsg', $channel, "\00303--\003 ". scalar @files ." file(s)");
 				my $i = 0;
 				foreach my $file (@files) {
