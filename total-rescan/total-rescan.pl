@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############## ############## ############## ############## ############## ######## #### ## #
 # total-rescan (c) daxxar ^ team pzs-ng <daxxar@mental.mine.nu> 
-#  - version 1.0
+#  - version 1.2rc1
 #
 
 #.########################################################################,
@@ -38,6 +38,9 @@
 #  the least i could do ;) 
 #  
 # changelog:
+#  from 1.1
+#  + rmlog.sh-generate feature. :-)
+#
 #  from 1.0
 #   ! output messages
 #   * not working due to no chdir to / after chroot
@@ -59,7 +62,9 @@ use warnings;
 use strict;
 
 my $rescan = 'bin/rescan'; # Change if you've moved it / using another rescanner.
-my $version = '.0';
+my $version = '.2rc1';
+my $rmscript = 'rmlog.sh';	# Generates 'rmlog.sh' in currentdir, containing rm -rf "$dir" on all failed rels.
+							# Set to '' to disable this feature. ;-)
 
 print "+ Starting total rescan v1$version by daxxar ^ team pzs-ng.\n";
 
@@ -129,6 +134,11 @@ sub rescandirs {
 
 		if (system('/bin/rescan')) {
 			print STDERR "- FAILED: $dir (retcode: ". ($? >> 8) .")\n";
+			if (defined($rmscript) & $rmscript ne '') {
+				open(RMLOG, '>>', $rmscript);
+				print RMLOG "rm -rf '$dir'";
+				close(RMLOG);
+			}
 		} else {
 			print "+ PASSED: $dir\n";
 		}
