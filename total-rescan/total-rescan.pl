@@ -40,6 +40,8 @@
 # changelog:
 #  from 1.3
 #  + support for zip-rescanning too ;) (see $zipscan, default on)
+#  + preserves mtime/atime of the dir being rescanned (thanks iNDi).
+#    (see $preservestamp) this will (supposedly) make site new work ok. ;)
 #  * getscandirs wasn't closing the dirhandle if there were no zips/sfvs in a dir.
 #  ! lists my real email in here now. =P
 #
@@ -78,7 +80,9 @@ my $rescan = 'bin/rescan';	# Change if you've moved it / using another rescanner
 my $rmscript = 'rmlog.sh';	# Generates 'rmlog.sh' in currentdir, containing rm -rf "$dir" on all failed rels.
 							# Set to '' to disable this feature. ;-)
 my $zipscan = 1;			# Set to 0 if you do not want to rescan dirs with .zips. :)
-my $version = '.4 rc1';		# Do not change. ;-)
+my $preservestamp = 1;		# Set to 0 if you do not want to preserve timestamps on dirs.
+
+my $version = '.4 rc2';		# Do not change. ;-)
 
 print "+ Starting total rescan v1$version by daxxar ^ team pzs-ng.\n";
 
@@ -154,6 +158,8 @@ sub rescandirs {
 			next;
 		}
 
+		my ($atime, $mtime) = (stat('.'))[8, 9] if $preservestamp;
+
 		my $output = `/bin/rescan`;
 		my ($passed, $total) = (-1, -1);
 		if ($output =~ /Passed ?: ?(\d+)$/m) { $passed = $1; }
@@ -171,6 +177,8 @@ sub rescandirs {
 				close(RMLOG);
 			}
 		}
+		
+		utime($atime, $mtime, '.') if $preservestamp;
 		
 		chdir('/');
 	}
