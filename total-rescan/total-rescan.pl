@@ -12,11 +12,11 @@
 #
 # info:
 #  this is a pure perlscript, and also not using any modules.
-#  it rescans a dir and all subdirs that contain a .sfv. this is
-#  probably only useful if you've had fsck delete some files or if 
+#  it rescans a dir and all subdirs that contain a .sfv (or .zip, see $zipscan)
+#  this is probably only useful if you've had fsck delete some files or if 
 #  you've moved files to the site without using ftp, or before
 #  zipscript was installed. it runs a given rescan binary from chroot
-#  inside any dirs that have a .sfv-file. :-)
+#  inside any dirs that have a .sfv/zip-file. :-) (see $zipscan)
 #  it will print one line for each 'rescan', and it'll be "+ PASSED:" or
 #  "- FAILED:", based on the returnvalue of rescan binary. all output
 #  from the rescan binary is supressed. :)
@@ -38,6 +38,11 @@
 #  the least i could do ;) 
 #  
 # changelog:
+#  from 1.3
+#  + support for zip-rescanning too ;) (see $zipscan, default on)
+#  * getscandirs wasn't closing the dirhandle if there were no zips/sfvs in a dir.
+#  ! lists my real email in here now. =P
+#
 #  from 1.2
 #  * rmlog.sh was accidentally overwritten at end of script, fixed. 
 #  ! didn't work with perl 5.005, switched to -w and two-argument open()
@@ -69,10 +74,11 @@
 
 use strict;
 
-my $rescan = 'bin/rescan'; # Change if you've moved it / using another rescanner.
-my $version = '.3 rc3';
+my $rescan = 'bin/rescan';	# Change if you've moved it / using another rescanner.
 my $rmscript = 'rmlog.sh';	# Generates 'rmlog.sh' in currentdir, containing rm -rf "$dir" on all failed rels.
 							# Set to '' to disable this feature. ;-)
+my $zipscan = 1;			# Set to 0 if you do not want to rescan dirs with .zips. :)
+my $version = '.4 rc1';		# Do not change. ;-)
 
 print "+ Starting total rescan v1$version by daxxar ^ team pzs-ng.\n";
 
@@ -112,9 +118,9 @@ sub getdirs {
 	return @dlist;
 }
 
-sub getsfvdirs {
+sub getscandirs {
 	my @dlist = @_;
-	my @sfvdlist;
+	my @scandlist;
 	DIR: foreach my $dir (@dlist) {
 		if (!opendir(DIR, $dir)) {
 			print STDERR "- Opening directory '$dir' for reading failed, skipping! ($!)\n";
@@ -124,13 +130,20 @@ sub getsfvdirs {
 		while (($_ = readdir(DIR))) {
 			if (/^\./ || -d "$_") { next; }
 			if (/\.sfv$/i) {
-				push(@sfvdlist, $dir);
+				push(@scandlist, $dir);
+				closedir(DIR);
+				next DIR;
+			}
+			if ($zipscan && /\.zip$/i) {
+				push(@scandlist, $dir);
 				closedir(DIR);
 				next DIR;
 			}
 		}
+		# In case the dir is without .sfv/.zip. :)
+		closedir(DIR);
 	}
-	return @sfvdlist;
+	return @scandlist;
 }
 
 sub rescandirs {
@@ -181,15 +194,17 @@ close(RMLOG);
 print "+ Caching directories recursively.\n";
 my @dirs = getdirs($path);
 
-print "+ Scanning dirs for sfv-files.\n";
-my @sfvdirs = getsfvdirs(@dirs);
-if (!@sfvdirs) {
-	print STDERR "! Could not find any dirs containing any SFVs under '$path', exiting.\n";
+print "+ Scanning dirs for sfv-files.\n" if not $zipscan;
+print "+ Scanning dirs for sfv/zip-files.\n" if $zipscan;
+my @scandirs = getscandirs(@dirs);
+if (!@scandirs) {
+	print STDERR "! Could not find any dirs containing any SFVs under '$path', exiting.\n" if not $zipscan;
+	print STDERR "! Could not find any dirs containing any SFVs or ZIPs under '$path', exiting.\n" if $zipscan;
 	exit 1;
 }
 
 print "+ Rescanning all dirs.\n";
-rescandirs(@sfvdirs);
+rescandirs(@scandirs);
 
 print "+ Adding 'closing entry' to rmscript ;)\n";
 open(RMLOG, ">>/$rmscript");
