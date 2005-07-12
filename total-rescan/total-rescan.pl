@@ -46,6 +46,8 @@
 #    instead of the dir itself. :) (only if preservestmap)
 #  * getscandirs wasn't closing the dirhandle if there were no zips/sfvs in a dir.
 #  ! "path" is now "pattern"; glob-matched pattern. :)
+#  * variablenames overlapping and output and such.
+#  * slight syntax error.
 #  ! lists my real email in here now. =P
 #
 #  from 1.2
@@ -87,7 +89,7 @@ my $preservestamp = 1;		# Set to 0 if you do not want to preserve timestamps on 
 my $stampfromfile = 0;		# Set to 1 if you want to fetch the timestamp from the first zip/sfv-file in thedir.
 							# Useful for people who've run the original script (1.4rc1 or before), and want to regen.
 
-my $version = '.4 rc3';		# Do not change. ;-)
+my $version = '.4 rc4';		# Do not change. ;-)
 
 print "+ Starting total rescan v1$version by daxxar ^ team pzs-ng.\n";
 
@@ -157,7 +159,7 @@ sub rescandirs {
 
 		my ($atime, $mtime);
 		if ($preservestamp) {
-			($atime, $mtime) = (stat( (glob('*.{sfv,zip}'))[0] )[8, 9] if $stampfromfile;
+			($atime, $mtime) = (stat( (glob('*.{sfv,zip}'))[0] ))[8, 9] if $stampfromfile;
 			($atime, $mtime) = (stat('.'))[8, 9] if not $stampfromfile;
 		}
 
@@ -195,9 +197,9 @@ if (!chdir('/')) {
 	exit 1;
 }
 
-while (my $current = glob $path) {
-	if (! -d $path) {
-		print STDERR "! Pattern '${glroot}${path}' matches a something that's not a dir (or does not exist)!\n";
+while (my $cpath = glob $path) {
+	if (! -d $cpath) {
+		print STDERR "! Pattern '${glroot}${path}' matches something ('$cpath') that's not a dir (or does not exist)!\n";
 		print STDERR "  (syntax: $0 <pattern> [glroot], pattern is relative to glroot, and a standard shell-pattern)\n";
 		exit 1;
 	}
@@ -211,7 +213,7 @@ close(RMLOG);
 
 print "+ Caching directories recursively based on pattern '$path'.\n";
 my @dirs;
-while (my $current = scalar glob $path) { @dirs = (@dirs, getdirs($current)); }
+while (my $cdir = scalar glob $path) { @dirs = (@dirs, getdirs($cdir)); }
 
 print "+ Scanning dirs for sfv-files.\n" if not $zipscan;
 print "+ Scanning dirs for sfv/zip-files.\n" if $zipscan;
