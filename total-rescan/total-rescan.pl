@@ -49,6 +49,7 @@
 #  * variablenames overlapping and output and such.
 #  * slight syntax error.
 #  ! lists my real email in here now. =P
+#  * $rescan wasn't being used, at all. :)
 #
 #  from 1.2
 #  * rmlog.sh was accidentally overwritten at end of script, fixed. 
@@ -81,7 +82,7 @@
 
 use strict;
 
-my $rescan = 'bin/rescan';	# Change if you've moved it / using another rescanner.
+my $rescan = '/bin/rescan';	# Change if you've moved it / using another rescanner.
 my $rmscript = 'rmlog.sh';	# Generates 'rmlog.sh' in currentdir, containing rm -rf "$dir" on all failed rels.
 							# Set to '' to disable this feature. ;-)
 my $zipscan = 1;			# Set to 0 if you do not want to rescan dirs with .zips. :)
@@ -159,17 +160,17 @@ sub rescandirs {
 
 		my ($atime, $mtime);
 		if ($preservestamp) {
-			($atime, $mtime) = (stat( (glob('*.{sfv,zip}'))[0] ))[8, 9] if $stampfromfile;
+			($atime, $mtime) = (stat( (glob('*.{sfv,diz,zip}'))[0] ))[8, 9] if $stampfromfile;
 			($atime, $mtime) = (stat('.'))[8, 9] if not $stampfromfile;
 		}
 
-		my $output = `/bin/rescan`;
+		my $output = `$rescan`;
 		my ($passed, $total) = (-1, -1);
 		if ($output =~ /Passed ?: ?(\d+)$/m) { $passed = $1; }
 		if ($output =~ /Total ?: ?(\d+)$/m) { $total = $1; }
 		
 		if ($passed == -1 || $total == -1) {
-			print "- ERROR! Output from /bin/rescan on '$dir' was unparseable. (Nonstandard rescan binary?)\n";
+			print "- ERROR! Output from $rescan on '$dir' was unparseable. (Nonstandard rescan binary?)\n";
 		} elsif ($passed == $total) {
 			print "+ PASSED: $dir\n";
 		} else {
