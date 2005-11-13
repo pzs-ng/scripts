@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############## ############## ############## ############## ############## ######## #### ## #
 # total-rescan (c) daxxar ^ team pzs-ng <daxxar@daxxar.com> 
-#  - version 1.3 rc3
+#  - version 1.4 rc5
 #
 
 #.########################################################################,
@@ -39,6 +39,9 @@
 #  
 # changelog:
 #  from 1.3
+#  * getscandirs() now skip symlinks
+#  + support for *only* sorting audioreleases, not rescanning. (needs pzs-ng v1.0.1 or equivilant)
+#  * if $rmscript was '', it would produce warnings / errors.
 #  + support for zip-rescanning too ;) (see $zipscan, default on)
 #  + preserves mtime/atime of the dir being rescanned (thanks iNDi).
 #    (see $preservestamp) this will (supposedly) make site new work ok. ;)
@@ -82,15 +85,22 @@
 
 use strict;
 
-my $rescan = '/bin/rescan';	# Change if you've moved it / using another rescanner.
-my $rmscript = 'rmlog.sh';	# Generates 'rmlog.sh' in currentdir, containing rm -rf "$dir" on all failed rels.
-							# Set to '' to disable this feature. ;-)
-my $zipscan = 1;			# Set to 0 if you do not want to rescan dirs with .zips. :)
-my $preservestamp = 1;		# Set to 0 if you do not want to preserve timestamps on dirs.
-my $stampfromfile = 0;		# Set to 1 if you want to fetch the timestamp from the first zip/sfv-file in thedir.
-							# Useful for people who've run the original script (1.4rc1 or before), and want to regen.
+my $rescan = '/bin/rescan';			# Change if you've moved it / using another rescanner.
+my $rmscript = 'rmlog.sh';			# Generates 'rmlog.sh' in currentdir, containing rm -rf "$dir" on all failed rels.
+									# Set to '' to disable this feature. ;-)
 
-my $version = '.4 rc4';		# Do not change. ;-)
+my $zipscan = 1;					# Set to 0 if you do not want to rescan dirs with .zips. :)
+my $preservestamp = 1;				# Set to 0 if you do not want to preserve timestamps on dirs.
+my $stampfromfile = 0;				# Set to 1 if you want to fetch the timestamp from the first zip/sfv-file in thedir.
+									# Useful for people who've run the original script (1.4rc1 or before), and want to regen.
+
+## USING THIS WILL NOT RESCAN
+## PZS-NG v1.0.1 SORTS WHEN YOU RESCAN SO ONLY USE THIS TO SAVE TIME OR SORT SFV-LESS RELEASES
+my $onlysort = 0;					# Set to 1 if you only want to resort mp3 releases, and never run rescan.
+my $audiosort = '/bin/audiosort';	# This defines what bin we use instead of /bin/rescan if $onlysort = 1. :)
+
+
+my $version = '.4 rc5';			# Do not change. ;-)
 
 print "+ Starting total rescan v1$version by daxxar ^ team pzs-ng.\n";
 
@@ -126,6 +136,7 @@ sub getscandirs {
 	my @dlist = @_;
 	my @scandlist;
 	DIR: foreach my $dir (@dlist) {
+		if (-l $dir) { next; }
 		if (!opendir(DIR, $dir)) {
 			print STDERR "- Opening directory '$dir' for reading failed, skipping! ($!)\n";
 			next;
@@ -133,18 +144,23 @@ sub getscandirs {
 		
 		while (($_ = readdir(DIR))) {
 			if (/^\./ || -d "$_") { next; }
-			if (/\.sfv$/i) {
+			if (!$onlysort && /\.sfv$/i) {
 				push(@scandlist, $dir);
 				closedir(DIR);
 				next DIR;
 			}
-			if ($zipscan && /\.zip$/i) {
+			if (!$onlysort && $zipscan && /\.zip$/i) {
+				push(@scandlist, $dir);
+				closedir(DIR);
+				next DIR;
+			}
+			if ($onlysort && /\.mp3$/i) {
 				push(@scandlist, $dir);
 				closedir(DIR);
 				next DIR;
 			}
 		}
-		# In case the dir is without .sfv/.zip. :)
+		# In case the dir is without .sfv/.zip/.mp3. :)
 		closedir(DIR);
 	}
 	return @scandlist;
@@ -158,32 +174,35 @@ sub rescandirs {
 			next;
 		}
 
-		my ($atime, $mtime);
-		if ($preservestamp) {
-			($atime, $mtime) = (stat( (glob('*.{sfv,diz,zip}'))[0] ))[8, 9] if $stampfromfile;
-			($atime, $mtime) = (stat('.'))[8, 9] if not $stampfromfile;
-		}
-
-		my $output = `$rescan`;
-		my ($passed, $total) = (-1, -1);
-		if ($output =~ /Passed ?: ?(\d+)$/m) { $passed = $1; }
-		if ($output =~ /Total ?: ?(\d+)$/m) { $total = $1; }
-		
-		if ($passed == -1 || $total == -1) {
-			print "- ERROR! Output from $rescan on '$dir' was unparseable. (Nonstandard rescan binary?)\n";
-		} elsif ($passed == $total) {
-			print "+ PASSED: $dir\n";
-		} else {
-			print STDERR "- FAILED: $dir\n";
-			if (defined($rmscript) && $rmscript ne '') {
-				open(RMLOG, ">>/$rmscript");
-				print RMLOG "rm -rf '$glroot$dir'\n";
-				close(RMLOG);
+		if ($onlysort) {
+			my $output = `$audiosort`;
+		} else  {
+			my ($atime, $mtime);
+			if ($preservestamp) {
+				($atime, $mtime) = (stat( (glob('*.{sfv,diz,zip}'))[0] ))[8, 9] if $stampfromfile;
+				($atime, $mtime) = (stat('.'))[8, 9] if not $stampfromfile;
 			}
+
+			my $output = `$rescan`;
+			my ($passed, $total) = (-1, -1);
+			if ($output =~ /Passed ?: ?(\d+)$/m) { $passed = $1; }
+			if ($output =~ /Total ?: ?(\d+)$/m) { $total = $1; }
+			
+			if ($passed == -1 || $total == -1) {
+				print "- ERROR! Output from $rescan on '$dir' was unparseable. (Nonstandard rescan binary?)\n";
+			} elsif ($passed == $total) {
+				print "+ PASSED: $dir\n";
+			} else {
+				print STDERR "- FAILED: $dir\n";
+				if (defined($rmscript) && $rmscript ne '') {
+					open(RMLOG, ">>/$rmscript");
+					print RMLOG "rm -rf '$glroot$dir'\n";
+					close(RMLOG);
+				}
+			}
+			
+			utime($atime, $mtime, '.') if $preservestamp;
 		}
-		
-		utime($atime, $mtime, '.') if $preservestamp;
-		
 		chdir('/');
 	}
 }
@@ -207,10 +226,12 @@ while (my $cpath = glob $path) {
 }
 
 
-print "+ Cleaning rmscript (/$rmscript)\n";
-open(RMLOG, ">/$rmscript");
-print RMLOG "echo '* Starting deletion of failed dirs.. :)'\n";
-close(RMLOG);
+if (defined($rmscript) && $rmscript ne '') {
+	print "+ Cleaning rmscript (/$rmscript)\n";
+	open(RMLOG, ">/$rmscript");
+	print RMLOG "echo '* Starting deletion of failed dirs.. :)'\n";
+	close(RMLOG);
+}
 
 print "+ Caching directories recursively based on pattern '$path'.\n";
 my @dirs;
@@ -228,9 +249,11 @@ if (!@scandirs) {
 print "+ Rescanning all dirs.\n";
 rescandirs(@scandirs);
 
-print "+ Adding 'closing entry' to rmscript ;)\n";
-open(RMLOG, ">>/$rmscript");
-print RMLOG "echo '* All done with deletion! :D'\n";
-close(RMLOG);
+if (defined($rmscript) && $rmscript ne '') {
+	print "+ Adding 'closing entry' to rmscript ;)\n";
+	open(RMLOG, ">>/$rmscript");
+	print RMLOG "echo '* All done with deletion! :D'\n";
+	close(RMLOG);
+}
 
 print "+ Done! :)\n";
