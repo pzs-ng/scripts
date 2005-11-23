@@ -195,7 +195,7 @@ sub rescandirs {
 			} else {
 				print STDERR "- FAILED: $dir\n";
 				if (defined($rmscript) && $rmscript ne '') {
-					open(RMLOG, ">>/$rmscript");
+					open(RMLOG, ">>$rmscript");
 					print RMLOG "rm -rf '$glroot$dir'\n";
 					close(RMLOG);
 				}
@@ -208,7 +208,7 @@ sub rescandirs {
 }
 
 print "+ Changing root for script to '$glroot' and changing dir to '/'.\n";
-if (!chroot($glroot)) {
+if ($glroot ne '/' && !chroot($glroot)) {
 	print STDERR "- Changing root failed! ($!)\n";
 	exit 1;
 }
@@ -217,7 +217,7 @@ if (!chdir('/')) {
 	exit 1;
 }
 
-while (my $cpath = glob $path) {
+while (my $cpath = scalar glob $path) {
 	if (! -d $cpath) {
 		print STDERR "! Pattern '${glroot}${path}' matches something ('$cpath') that's not a dir (or does not exist)!\n";
 		print STDERR "  (syntax: $0 <pattern> [glroot], pattern is relative to glroot, and a standard shell-pattern)\n";
@@ -228,7 +228,7 @@ while (my $cpath = glob $path) {
 
 if (defined($rmscript) && $rmscript ne '') {
 	print "+ Cleaning rmscript (/$rmscript)\n";
-	open(RMLOG, ">/$rmscript");
+	open(RMLOG, ">$rmscript");
 	print RMLOG "echo '* Starting deletion of failed dirs.. :)'\n";
 	close(RMLOG);
 }
@@ -251,7 +251,7 @@ rescandirs(@scandirs);
 
 if (defined($rmscript) && $rmscript ne '') {
 	print "+ Adding 'closing entry' to rmscript ;)\n";
-	open(RMLOG, ">>/$rmscript");
+	open(RMLOG, ">>$rmscript");
 	print RMLOG "echo '* All done with deletion! :D'\n";
 	close(RMLOG);
 }
