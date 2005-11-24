@@ -185,7 +185,7 @@ sub rescandir {
 		if ($output =~ /Total ?: ?(\d+)$/m) { $total = $1; }
 		
 		if ($passed == -1 || $total == -1) {
-			print "- ERROR! Output from $rescan on '$dir' was unparseable. (Nonstandard rescan binary?)\n";
+			print STDERR "- ERROR! Output from $rescan on '$dir' was unparseable. (Nonstandard rescan binary?)\n";
 			$retval = 0;
 		} elsif ($passed == $total) {
 			print "+ PASSED: $dir\n" if $printeach;
@@ -267,8 +267,8 @@ while (my $cdir = scalar glob $path) {
 }
 
 if (!$scanneddirs) {
-	print STDERR "! Could not find any dirs containing any SFVs under '$path', exiting.\n" if not $zipscan;
-	print STDERR "! Could not find any dirs containing any SFVs or ZIPs under '$path', exiting.\n" if $zipscan;
+	print "! Could not find any dirs containing any SFVs under '$path', exiting.\n" if not $zipscan;
+	print "! Could not find any dirs containing any SFVs or ZIPs under '$path', exiting.\n" if $zipscan;
 	exit 1;
 }
 
