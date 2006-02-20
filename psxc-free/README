@@ -1,0 +1,91 @@
+README FOR PSXC-FREE
+--------------------
+
+
+This is a simple, yet versatile freespace script. Unlike a lot of other
+freespace script it does not have a lot of options, or advanced configs.
+Yet it still does the basics for almost any site, namely remove the oldest
+dir(s) when availible space is low.
+There is no special dated dir options - you can mix dated and non-dated dirs
+without concern.
+Anyhoo - here's the quick rundown of the config.
+
+
+PATH              - The usual PATH variable. Should contain all dirs where
+                    whatever bins it needs is stored.
+
+SITEDIR           - Full sitepath, usually /glftpd/site. I don't think this
+                      warrants more explanation.
+
+MDATE             - Included is a small bin the script uses to log the date
+                    of dirs. Compile this by the compile.sh script.
+
+USEGNUDATE        - The 'date' command differs on linux and *bsd. If you're
+                    running this script on linux, you'll want to set this to
+                    "YES".
+
+TEMPFILE#         - Files the script uses as tempfiles.
+
+TESTRUN           - While you test the script, keep this set to "YES". Nothing
+                    will be removed - stuff that would have been removed will
+                    be shown.
+
+Next up follow device-specific variables. These are marked with a _# where # is
+a number starting with 1 (not 0).
+
+DEVICENAME_#      - This is the device we check for freespace. Usually it is
+                    /dev/something.
+                    Examples: /dev/hda1 /dev/mapper/site
+
+  MINFREE_#       - This the minimum amount of free space in megabytes allowed
+                    on the device. If free space is less than this, the script
+                    start working.
+                    Examples: 2048 5192
+
+  SETFREE_#       - Once we start removing stuff we won't stop until this amount
+                    is availible. This var must be the same or higher than
+                    the MINFREE_# variable.
+                    Examples: 3096 5192
+
+  DIRS_#          - Enter the sections the script should search for dirs to
+                    remove. If you enter dated format, this will be used. For
+                    non-dated dirs you should end with a /*, else the entire
+                    dir will be considered part of what the script should
+                    remove.
+                    Below is 4 examples - the first is a normal section where
+                    all dirs in APPS is listed. The second is a dated dir
+                    structure where the date of the dir is the one considered,
+                    not when it was made or updated. The third example is
+                    similar to the second example, but has two dated structured
+                    and the name of the dir is reversed (day before month). This
+                    has no bearing for the script. The fourth example is a mix
+                    of a normal and a dated sectiondir.
+                    Examples: "APPS/* 0DAY/%m%d ARCHIVE/0DAY/%Y-%m/%d%m PDA/%Y-%m/*"
+
+  DAYSBACK_#      - How big an archive do you have? This is listed in days.
+                    Examples: 30 140
+
+  EXCLUDES_#      - The following pattern of files is ignored by the script, and
+                    will not be deleted. The pattern is an extended regex
+                    pattern.
+                    Example: "^#|\<^PRE\>|\<^GROUPS\>|^\-"
+
+
+Copy psxc-free.conf and psxc-free.sh to /glfptd/bin. If you choose to put the
+conf in a different dir than the main script (psxc-free.sh) you need to edit
+the conf var in psxc-free.sh.
+To make it run, add it as a crontab entry, like this:
+
+15,45 * * * * /glftpd/bin/psxc-free.sh >/glftpd/ftp-data/logs/psxc-free.log 2>&1
+
+This will make the script run 2 times an hour, and log what it does and any
+errors to a logfile.
+
+That's about it. Even though this is the very first release of the script, you
+shouldn't expect a lot more features in future versions. There are plenty others
+that do limits on number of dated dirs, percentage usage of sections etc. If
+you need such features you should check them out.
+Comments/praise/request can be directed to me on irc. My nick is psxc.
+
+- psxc 2006
+
