@@ -30,6 +30,10 @@ TESTRUN           - While you test the script, keep this set to "YES". Nothing
                     will be removed - stuff that would have been removed will
                     be shown.
 
+CREATEDATE        - If you set this to "YES" the script will try to create
+                    today's dated dir if it does not already exists. It will
+                    not create/update any symlink you have pointing at it/them.
+
 Next up follow device-specific variables. These are marked with a _# where # is
 a number starting with 1 (not 0).
 

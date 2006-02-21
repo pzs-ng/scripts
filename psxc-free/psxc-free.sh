@@ -5,7 +5,7 @@ conf=./psxc-free.conf
 
 ## code part below
 ####################################################################
-version=0.1
+version=0.2
 
 logsimpledir()
 {
@@ -65,7 +65,7 @@ devnum=1
 eval devicename=\$DEVICENAME_$devnum
 
 if [[ "$TESTRUN" == "YES" ]]; then
-  echo -e "$(date "+%a %b %e %T %Y") PSXC-FREE V${version} started.\n"
+  echo -e "$(date "+%a %b %e %T %Y") PSXC-FREE v${version} started.\n"
 fi
 while [ "$devicename" ]; do
   :>$TEMPFILE1
@@ -86,8 +86,28 @@ while [ "$devicename" ]; do
     eval devicename=\$DEVICENAME_$devnum
     continue
   fi
+
+  # should we create today's date?
+  if [[ "$CREATEDATE" == "YES" ]]; then
+    for modname in $dirs; do
+      if [[ $(echo $modname | grep ":") ]]; then
+        dname=$(echo $modname | cut -d ":" -f 1)
+      else
+        dname=$modname
+      fi
+      dirname=$SITEDIR/$dname
+      if [[ $(echo "$dirname" | grep "%") ]]; then
+        if [[ ! -e $(date +$dirname) ]]; then
+          mkdir -m0777 -p $(date +$dirname)
+        fi
+      fi
+    done
+  fi
+
   if [[ $freespace -ge $minfree ]]; then
-    echo "Enough space availible on $devicename - skipping this device."
+    if [[ "$TESTRUN" == "YES" ]]; then
+      echo "Enough space availible on $devicename - skipping this device."
+    fi
     let devnum=devnum+1
     eval devicename=\$DEVICENAME_$devnum
     continue
@@ -202,6 +222,6 @@ while [ "$devicename" ]; do
   eval devicename=\$DEVICENAME_$devnum
 done
 if [[ "$TESTRUN" == "YES" ]]; then
-  echo -e "$(date "+%a %b %e %T %Y") PSXC-FREE V${version} started.\n"
+  echo -e "$(date "+%a %b %e %T %Y") PSXC-FREE v${version} started.\n"
 fi
 
