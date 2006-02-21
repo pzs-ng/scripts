@@ -5,6 +5,7 @@ conf=./psxc-free.conf
 
 ## code part below
 ####################################################################
+version=0.1
 
 logsimpledir()
 {
@@ -47,10 +48,10 @@ freeupspace()
 {
   if [[ -z "$(basename $1 | grep -E "$excludes")" ]]; then
     if [[ "$TESTRUN" == "YES" ]]; then
-      echo "REMOVING $1"
+      echo "REMOVING $1 - freeing ${2}M"
     else
-      #rm -fR $1
-      echo "$(date "+%a %b %e %T %Y") PSXCFREE: {$(echo /$1 | sed "s|$GLROOT||" | tr -s '/')} {$2}" #>> $GLLOG
+      rm -fR $1
+      echo "$(date "+%a %b %e %T %Y") PSXCFREE: {$(echo /$1 | sed "s|$GLROOT||" | tr -s '/' | sed "s|/$//")} {$2}" >> $GLLOG
     fi
   else
     if [[ "$TESTRUN" == "YES" ]]; then
@@ -63,6 +64,9 @@ source $conf
 devnum=1
 eval devicename=\$DEVICENAME_$devnum
 
+if [[ "$TESTRUN" == "YES" ]]; then
+  echo -e "$(date "+%a %b %e %T %Y") PSXC-FREE V${version} started.\n"
+fi
 while [ "$devicename" ]; do
   :>$TEMPFILE1
   :>$TEMPFILE2
@@ -126,6 +130,12 @@ while [ "$devicename" ]; do
   sort $TEMPFILE1 >$TEMPFILE2
   secnum=0
   for modname in $dirs; do
+    if [[ $freespace -gt $setfree ]]; then
+      if [[ "$TESTRUN" == "YES" ]]; then
+        echo "DEVICE $devicename: ENOUGH FREESPACE ON THIS DEVICE."
+      fi
+      break
+    fi
     let secnum=secnum+1
     if [[ ! -z "$(echo $modname | grep ":")" ]]; then
       dname=$(echo $modname | cut -d ":" -f 1)
@@ -149,6 +159,9 @@ while [ "$devicename" ]; do
     fi
     let dsize=dsize*1024
     if [[ $dsize -ne 0 && $dsize -lt ${sectionsize[$secnum]} ]]; then
+      if [[ "$TESTRUN" == "YES" ]]; then
+        echo "SECTION $( echo $modname | cut -d ':' -f 1): $( expr ${sectionsize[$secnum]} / 1024)M - maximum: $(expr ${dsize} / 1024)M"
+      fi
       while read -a readline; do
         if [[ $secnum -eq ${readline[3]} ]]; then
           freeupspace ${readline[2]} ${readline[1]}
@@ -159,6 +172,9 @@ while [ "$devicename" ]; do
               break
             fi
             if [[ $dsize -gt ${sectionsize[$secnum]} ]]; then
+              if [[ "$TESTRUN" == "YES" ]]; then
+                echo "SECTION $modname: SECTIONSPACE ACHIEVED - CONTINUING TO NEXT."
+              fi
               break
             fi
           fi
@@ -173,6 +189,9 @@ while [ "$devicename" ]; do
       if [[ "$TESTRUN" == "YES" || ! -e ${readline[2]} ]]; then
         let freespace=freespace+${readline[1]}/1024
         if [[ $freespace -gt $setfree ]]; then
+          if [[ "$TESTRUN" == "YES" ]]; then
+            echo "DEVICE $devicename: ENOUGH FREESPACE ON THIS DEVICE."
+          fi
           break
         fi
       fi
@@ -182,4 +201,7 @@ while [ "$devicename" ]; do
   let devnum=devnum+1
   eval devicename=\$DEVICENAME_$devnum
 done
+if [[ "$TESTRUN" == "YES" ]]; then
+  echo -e "$(date "+%a %b %e %T %Y") PSXC-FREE V${version} started.\n"
+fi
 
