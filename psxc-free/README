@@ -1,18 +1,29 @@
 README FOR PSXC-FREE
 --------------------
 
-
+INTRODUCTION
+------------
 This is a simple, yet versatile freespace script. Unlike a lot of other
 freespace script it does not have a lot of options, or advanced configs.
 Yet it still does the basics for almost any site, namely remove the oldest
-dir(s) when availible space is low.
+dir(s) when availible space is low, or move them to a different location.
 There is no special dated dir options - you can mix dated and non-dated dirs
 without concern.
-Anyhoo - here's the quick rundown of the config.
+Quota support is ofcourse present, giving you better control of how much
+space should be used in each section. However, quotas are not absolute -
+if there's enough free space on the device, but one section is over quota,
+no action will be taken until the free space of the entire device is below
+minimum limit. This may be changed in a later version.
 
 
+CONFIG
+------
 PATH              - The usual PATH variable. Should contain all dirs where
                     whatever bins it needs is stored.
+
+GLROOT            - Full path to installdir of glftpd.
+
+GLLOG             - Full path to glftpd.log
 
 SITEDIR           - Full sitepath, usually /glftpd/site. I don't think this
                       warrants more explanation.
@@ -24,7 +35,7 @@ USEGNUDATE        - The 'date' command differs on linux and *bsd. If you're
                     running this script on linux, you'll want to set this to
                     "YES".
 
-TEMPFILE#         - Files the script uses as tempfiles.
+TEMPDIR           - Files the script uses as tempfiles is places here.
 
 TESTRUN           - While you test the script, keep this set to "YES". Nothing
                     will be removed - stuff that would have been removed will
@@ -33,6 +44,11 @@ TESTRUN           - While you test the script, keep this set to "YES". Nothing
 CREATEDATE        - If you set this to "YES" the script will try to create
                     today's dated dir if it does not already exists. It will
                     not create/update any symlink you have pointing at it/them.
+
+EXCLUDES          - The following pattern of files is ignored by the script, and
+                    will not be deleted. The pattern is an extended regex
+                    pattern.
+                    Example: "^#|\<^PRE\>|\<^GROUPS\>|^\-"
 
 Next up follow device-specific variables. These are marked with a _# where # is
 a number starting with 1 (not 0).
@@ -51,39 +67,42 @@ DEVICENAME_#      - This is the device we check for freespace. Usually it is
                     the MINFREE_# variable.
                     Examples: 3096 5192
 
+  DAYSBACK_#      - How big an archive do you have? This is listed in days. This
+                    regards dated dirs only.
+                    Example: 90
+
   DIRS_#          - Enter the sections the script should search for dirs to
                     remove. If you enter dated format, this will be used. For
                     non-dated dirs you should end with a /*, else the entire
                     dir will be considered part of what the script should
                     remove.
+                    Syntax: <PATH>
+                    Examples: "DIVX/*" and "/0DAY/%m%d"
+
                     If you wish to have some sort of quota setup, add a colon
                     and a size after the dir, like APPS/*:60G. You can use 'G'
                     to specify gigabytes, 'T' for terabytes, '%' for percentage
                     of total diskspace. If you do not specify a type of size
                     after the number, megabytes will be used. The number
                     specified is the maximum allowed space used on this section.
-                    Below is 4 examples - the first is a normal section where
-                    all dirs in APPS is listed. The second is a dated dir
-                    structure where the date of the dir is the one considered,
-                    not when it was made or updated. The third example is
-                    similar to the second example, but has two dated structured
-                    and the name of the dir is reversed (day before month). It
-                    also have a quota set up. The fourth example is a mix
-                    of a normal and a dated sectiondir.
-                    Examples: "APPS/* 0DAY/%m%d ARCHIVE/0DAY/%Y-%m/%d%m:30% PDA/%Y-%m/*"
+                    Syntax: <PATH>:<SIZE>
+                    Examples: "DIVX/*:50G" and "0DAY/%m%d:70%"
 
-  DAYSBACK_#      - How big an archive do you have? This is listed in days.
-                    Examples: 30 140
-
-  EXCLUDES_#      - The following pattern of files is ignored by the script, and
-                    will not be deleted. The pattern is an extended regex
-                    pattern.
-                    Example: "^#|\<^PRE\>|\<^GROUPS\>|^\-"
+                    If you wish to archive dirs you need to add the dir to put
+                    the archived items. You also should add a number after that
+                    which signify the device the archive is on. If no number is
+                    set, current devicenumber is used.
+                    Syntax: <PATH>:<SIZE>:<ARCHIVEDIR>:<DEVICE_#>
+                    <SIZE> and <DEVICE_#> is optional.
+                    Examples: "DIVX/*:50G:MOVIES:6" and "0DAY/%m%d::ARCHIVE/%Y%m:2"
 
 
-Copy psxc-free.conf and psxc-free.sh to /glfptd/bin. If you choose to put the
-conf in a different dir than the main script (psxc-free.sh) you need to edit
-the conf var in psxc-free.sh.
+INSTALLATION
+------------
+Copy psxc-free.conf to /glftpd/etc and psxc-free.sh to /glftpd/bin, or have them
+both in the same dir. Usually there's no need to edit psxc-find.sh - it'll let
+you know if something's up.
+
 To make it run, add it as a crontab entry, like this:
 
 15,45 * * * * /glftpd/bin/psxc-free.sh >/glftpd/ftp-data/logs/psxc-free.log 2>&1
@@ -91,11 +110,25 @@ To make it run, add it as a crontab entry, like this:
 This will make the script run 2 times an hour, and log what it does and any
 errors to a logfile.
 
+
+A NOTE ABOUT ARCHIVING
+----------------------
+Archiving dirs is a somewhat difficult task, really. If you archive on your
+site, put the device with the archive(s) LAST. It won't break anything if you
+don't, or have archive devices spread all over, but the general rule-of-thumb
+is to place the archive devices (destination devices that is) last.
+The devices you wish to move FROM should be placed first. Again, more a
+general rule-of-thumb than an absolute.
+
+
+FINAL NOTE
+----------
 That's about it. Even though this is the very first release of the script, you
 shouldn't expect a lot more features in future versions. There are plenty others
 that do limits on number of dated dirs etc. If you need such features you should
 check them out.
 Comments/praise/request can be directed to me on irc. My nick is psxc.
+
 
 - psxc 2006
 
