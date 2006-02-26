@@ -10,10 +10,7 @@ dir(s) when availible space is low, or move them to a different location.
 There is no special dated dir options - you can mix dated and non-dated dirs
 without concern.
 Quota support is ofcourse present, giving you better control of how much
-space should be used in each section. However, quotas are not absolute -
-if there's enough free space on the device, but one section is over quota,
-no action will be taken until the free space of the entire device is below
-minimum limit. This may be changed in a later version.
+space should be used in each section. Quotas can be absolute or dynamic.
 
 
 CONFIG
@@ -51,7 +48,7 @@ EXCLUDES          - The following pattern of files is ignored by the script, and
                     Example: "^#|\<^PRE\>|\<^GROUPS\>|^\-"
 
 Next up follow device-specific variables. These are marked with a _# where # is
-a number starting with 1 (not 0).
+a number starting with 1 (not 0), signifying the device number.
 
 DEVICENAME_#      - This is the device we check for freespace. Usually it is
                     /dev/something.
@@ -80,11 +77,17 @@ DEVICENAME_#      - This is the device we check for freespace. Usually it is
                     Examples: "DIVX/*" and "/0DAY/%m%d"
 
                     If you wish to have some sort of quota setup, add a colon
-                    and a size after the dir, like APPS/*:60G. You can use 'G'
-                    to specify gigabytes, 'T' for terabytes, '%' for percentage
-                    of total diskspace. If you do not specify a type of size
-                    after the number, megabytes will be used. The number
-                    specified is the maximum allowed space used on this section.
+                    and a size after the dir, like APPS/*:60G. 'M' and 'm'
+                    signify megabytes, 'G' and 'g' is gigabytes, 'G' and 'g'
+                    is gigabytes, 'P' and '%' is percentage of total diskspace,
+                    'F' and 'f' is number of files allowed in section.
+                    'M', 'G', 'T', 'P' and 'F' mark an section absolute - the
+                    size given will be achieved no matter how much free space
+                    the device have.
+                    'm', 'g', 't', '%' and 'f' mark a section dynamic - unless
+                    the device is under MINFREE_#, nothing will be removed.
+                    If you do not specify a type of size after the number,
+                    dynamic megabytes will be used.
                     Syntax: <PATH>:<SIZE>
                     Examples: "DIVX/*:50G" and "0DAY/%m%d:70%"
 
@@ -124,9 +127,8 @@ general rule-of-thumb than an absolute.
 FINAL NOTE
 ----------
 That's about it. Even though this is the very first release of the script, you
-shouldn't expect a lot more features in future versions. There are plenty others
-that do limits on number of dated dirs etc. If you need such features you should
-check them out.
+shouldn't expect a lot more features in future versions. The goal when i made
+this script was to have an easy config.
 Comments/praise/request can be directed to me on irc. My nick is psxc.
 
 

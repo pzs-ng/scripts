@@ -11,10 +11,14 @@ int main( int argc, char *argv[] ){
 		return 1;
 	if (stat(argv[1], &filestats) == -1)
 		return 1;
-	if (argc > 2)
-		printf("%lld\n", (long long)(time(0) - atoi(argv[2]) * 60 * 60 * 24));
-	else
+	if (argc == 2)
 		printf( "%lld\n", (long long)filestats.st_mtime);
+	else if (argc == 3)
+		printf("%lld\n", (long long)(time(0) - (atoi(argv[2]) * 60 * 60 * 24)));
+	else if (argc == 4)
+		printf("%lld\n", (long long)(time(0) - atoi(argv[2])));
+        else
+		return 1;
 	return 0;
 }
 
