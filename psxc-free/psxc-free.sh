@@ -100,7 +100,7 @@ freeupspace()
 }
 
 # VERSION
-version=0.4
+version=0.5
 
 # Find and read conf
 CONF1=$PWD/$0
@@ -116,6 +116,43 @@ else
     echo "ERROR! COULD NOT FIND psxc-free.conf! Edit the variable CONF in $0 to fix!"
     exit 1
   fi
+fi
+
+# Find location of glftpd.conf
+if [[ -z "$GLCONF" || ! -e $GLCONF ]]; then
+  if [[ -e /etc/inetd.conf ]]; then
+    glconf=$(grep $GLROOT /etc/inetd.conf | grep -- -r | grep -v ^# | tr '-' '\n' | grep "^r\ " | head -n 1 | awk '{print $2}')
+  elif [[ -d /etc/xinetd.d ]]; then
+    for xfile in /etc/xinetd.d/*; do
+      glconf=$(grep $GLROOT $xfile | grep -- -r | grep -v ^# | tr '-' '\n' | grep "^r\ " | head -n 1 | awk '{print $2}')
+      if [[ ! -z "$glconf" ]]; then
+        break
+      fi
+    done
+    if [[ -z "$glconf" ]]; then
+      glconf=$(grep $GLROOT /etc/xinetd.conf | grep -- -r | grep -v ^# | tr '-' '\n' | grep "^r\ " | head -n 1 | awk '{print $2}')
+    fi
+  fi
+  if [[ -z "$glconf" ]]; then
+    if [[ -e /etc/glftpd.conf ]]; then
+      glconf=/etc/glftpd.conf
+    else
+      echo "Your glftpd.conf file could not be found - please add \"GLCONF=/path/to/glftpd.conf\" in psxc-free.conf"
+      exit 1
+    fi
+  fi
+else
+  glconf=$GLCONF
+fi
+GLUPDATE=${GLUPDATE:-$GLROOT/bin/glupdate}
+OLDDIRCLEAN=${OLDDIRCLEAN:-$GLROOT/bin/olddirclean2}
+if [[ ! -x $GLUPDATE || ! -f $GLUPDATE ]]; then
+  echo "The glupdate file could not be found/executed - please add \"GLUPDATE=/path/to/glupdate\" in psxc-free.conf"
+  exit 1
+fi
+if [[ ! -x $OLDDIRCLEAN || ! -f $OLDDIRCLEAN ]]; then
+  echo "The olddirclean2 file could not be found/executed - please add \"OLDDIRCLEAN=/path/to/olddirclean2\" in psxc-free.conf"
+  exit 1
 fi
 
 devnum=1
@@ -397,19 +434,22 @@ while read -a readmove; do
       archour=$(((${readmove[2]}%86400)/3600))
       arcmin=$((((${readmove[2]}%86400)%3600)/60))
       arcsec=$((((${readmove[2]}%86400)%3600)%60))
-      arcdatedir=$(date --date "-$arcday day -$archour hour -$arcmin min -$arcsec sec" +${arcdatedir})
+      arcdatedir=$(date --date "-$arcday day -$archour hour -$arcmin min -$arcsec sec" +${readmove[1]})
     fi
     if [[ "$TESTRUN" == "YES" ]]; then
-      echo "MOVING ${readmove[0]} to $(date +$SITEDIR/${arcdatedir})"
+      echo "MOVING ${readmove[0]} to ${SITEDIR}/${arcdatedir}"
     else
-      mkdir -m0777 -p $(date +$SITEDIR/${arcdatedir})
-      mv -fRp ${readmove[0]} $(date +$SITEDIR/${arcdatedir}/)
+      destdir=$(echo ${SITEDIR}/${arcdatedir} | tr -s '/')
+      mkdir -m0777 -p $destdir
+      mv -fRp ${readmove[0]} $destdir/
+      $GLUPDATE -r $glconf $destdir/$(basename ${readmove[0]})
     fi
   fi
 done < $TEMPFILE3
 if [[ "$TESTRUN" == "YES" ]]; then
   echo -e "\n$(date "+%a %b %e %T %Y") PSXC-FREE v${version} completed."
 else
+  $OLDDIRCLEAN -r $glconf >/dev/null 2>&1
   :> $TEMPFILE1
   :> $TEMPFILE2
   :> $TEMPFILE3
