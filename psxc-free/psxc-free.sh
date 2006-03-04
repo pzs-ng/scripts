@@ -15,6 +15,9 @@ logsimpledir()
     else
       let section_space[$secnum]=${section_space[$secnum]}+$dsize
     fi
+    if [[ ! -z "$(basename $1 | grep -E "$delfirst")" && $mdate -le $delfirsttime ]]; then
+      mdate=0
+    fi
     echo -e "$mdate\t$dsize\t$1\t$secnum\t$devnum" >>$TEMPFILE1
   fi
 }
@@ -49,13 +52,13 @@ logdir()
 freeupspace()
 {
   if [[ -z "$(basename $1 | grep -E "$excludes")" ]]; then
-    if [[ "${device_archive[$devnum]}" == "YES" && "${section_archive[$secnum]}" == "YES" ]]; then
+    if [[ "${device_archive[$devnum]}" == "YES" && "${section_archive[$secnum]}" == "YES" && $6 -gt 0 ]]; then
       if [[ "${4}" != "NULL" ]]; then
         echo -e "$1\t$4\t$6" >>$TEMPFILE3
         if [[ "$TESTRUN" != "YES" ]]; then
           echo "$(date "+%a %b %e %T %Y") PSXCFREE_A: {$(echo /$1 | sed "s|$GLROOT||" | tr -s '/' | sed "s|/$||")} {$2}" >> $GLLOG
         else
-          echo "DEVICE $devicename: MARKING $1 - FREEING $((${2}/1024))M"
+          echo "DEVICE #$devnum $devicename: MARKING $1 - FREEING $((${2}/1024))MB"
         fi
         let freespace[$devnum]=${freespace[$devnum]}+${2}
         let freespace[${5}]=${freespace[${5}]}-${2}
@@ -76,10 +79,11 @@ freeupspace()
         if [[ "$TESTRUN" != "YES" ]]; then
           echo "$(date "+%a %b %e %T %Y") PSXCFREE: {$(echo /$1 | sed "s|$GLROOT||" | tr -s '/' | sed "s|/$||")} {$2}" >> $GLLOG
           rm -fR $delfile
+          rmdir $(dirname $delfile)
         else
-          echo "DEVICE $devicename: REMOVING $1 - FREEING $((${2}/1024))M ($((${freespace[$devnum]}/1024)))"
+          echo "DEVICE #$devnum $devicename: REMOVING $1 - FREEING $((${2}/1024))MB"
         fi
-        echo -e "$1\t$4\t$6\talready_removed" >>$TEMPFILE3
+#        echo -e "$1\t$4\t$6\talready_removed" >>$TEMPFILE3
         let freespace[$devnum]=${freespace[$devnum]}+${2}
         let section_space[$secnum]=${section_space[$secnum]}-${2}
         if [[ "$3" != "NULL" ]]; then
@@ -89,7 +93,7 @@ freeupspace()
     fi
   else
     if [[ "$TESTRUN" == "YES" ]]; then
-      echo "DEVICE $devicename: IGNORING $1"
+      echo "DEVICE #$devnum $devicename: IGNORING $1"
     fi
   fi
 }
@@ -103,19 +107,29 @@ initialize_devvars()
   eval dirs[$devnum]=\$DIRS_$devnum
   eval daysback[$devnum]=\$DAYSBACK_$devnum
   excludes=$(echo "$EXCLUDES" | tr ' ' '|')
+  delfirst=$(echo "$DELFIRST" | tr ' ' '|')
   device_archive[$devnum]=${device_archive[$devnum]:-"NO"}
   device_statsec[$devnum]=${device_statsec[$devnum]:-"NO"}
   for modname in ${dirs[$devnum]}; do
-    if [[ ! -z "$(echo $modname | grep ':' | cut -d ":" -f 3)" ]]; then
+    if [[ ! -z "$(echo $modname | grep ':' | cut -d ':' -f 3)" ]]; then
       # section archiving on device
       device_archive[$devnum]="YES"
     fi
-    if [[ ! -z "$(echo $modname | grep ':' | cut -d ":" -f 2)" ]]; then
+    if [[ ! -z "$(echo $modname | grep ':' | cut -d ':' -f 2)" ]]; then
       # sections on device
       device_section[$devnum]="YES"
     fi
+    if [[ ! -z "$(echo $modname | grep ':' | cut -d ':' -f 2 | tr -cd 'MGTPFDWL')" ]]; then
+      # sections on device
+      device_statsec[$devnum]="YES"
+    fi
   done
   freespace[$devnum]=$(df -Pk | grep ^$devicename | awk '{print $4}')
+  if [ "$USEGNUDATE" != "YES" ]; then
+    delfirsttime=$(date -v-${DELFIRSTTIME}H +%s)
+  else
+    delfirsttime=$(date --date "-${DELFIRSTTIME} hour" +%s)
+  fi
 }
 
 readconf()
@@ -178,11 +192,16 @@ readglconf()
 create_today()
 {
   for modname in ${dirs[$devnum]}; do
-    dirname=$SITEDIR/$(echo $modname | cut -d ":" -f 1)
+    dirname=$(echo $modname | cut -d ':' -f 1 | cut -d '|' -f 1)
+    symname=$(echo $modname | cut -d ':' -f 1 | grep '|' | cut -d '|' -f 2)
     if [[ "$CREATEDATE" == "YES" ]]; then
       if [[ ! -z "$(echo "$dirname" | grep "%")" ]]; then
-        if [[ ! -e $(date +$dirname) ]]; then
-          mkdir -m0777 -p $(date +$dirname)
+        if [[ ! -e $SITEDIR/$(date +$dirname) ]]; then
+          mkdir -m0777 -p $SITEDIR/$(date +$dirname)
+          if [[ ! -z "$symname" ]]; then
+            rm $SITEDIR/$symname
+            ln -s ./$(date +$dirname) $SITEDIR/$symname
+          fi
         fi
       fi
     fi
@@ -191,8 +210,8 @@ create_today()
 
 calc_secsize()
 {
-  if [[ ! -z "$(echo $modname | grep ':' | cut -d ":" -f 2)" ]]; then
-    ssize=$(echo $modname | cut -d ":" -f 2)
+  if [[ ! -z "$(echo $modname | grep ':' | cut -d ':' -f 2)" ]]; then
+    ssize=$(echo $modname | cut -d ':' -f 2)
     dsize[$secnum]=$(echo $ssize | tr -cd '0-9')
     dfiles[$secnum]=0
     datelimit_sec[$secnum]=0
@@ -252,7 +271,7 @@ calc_secsize()
     fi
     if [[ ! -z "$(echo $ssize | tr -cd 'MGTPFDWL')" ]]; then
       section_statsec[$secnum]="YES"
-      device_statsec[$devnum]="YES"
+#      device_statsec[$devnum]="YES"
     else
        section_statsec[$secnum]="NO"
     fi
@@ -267,9 +286,9 @@ calc_secsize()
 
 grab_archinfo()
 {
-  if [[ ! -z "$(echo $modname | grep ':' | cut -d ":" -f 3)" ]]; then
-    archdirname[$secnum]=$(echo $modname | cut -d ":" -f 3)
-    archdevnum[$secnum]=$(echo $modname | cut -d ":" -f 4)
+  if [[ ! -z "$(echo $modname | grep ':' | cut -d ':' -f 3)" ]]; then
+    archdirname[$secnum]=$(echo $modname | cut -d ':' -f 3)
+    archdevnum[$secnum]=$(echo $modname | cut -d ':' -f 4)
     section_archive[$secnum]="YES"
     if [[ -z "${archdevnum[$secnum]}" ]]; then
       archdevnum[$secnum]=$devnum
@@ -286,11 +305,6 @@ grab_dated()
   currdaysback=${daysback[$devnum]}
   datedir=0
   while [ $currdaysback -ge 0 ]; do
-    if [ "$USEGNUDATE" != "YES" ]; then
-      currdatedir=$(date -v-${currdaysback}d +${dirname[$secnum]})
-    else
-      currdatedir=$(date --date "-${currdaysback} day" +${dirname[$secnum]})
-    fi
     if [ "$USEGNUDATE" != "YES" ]; then
       currdatedir=$(date -v-${currdaysback}d +${dirname[$secnum]})
     else
@@ -319,7 +333,7 @@ freeupspace_dev()
       if [[ "$TESTRUN" == "YES" || ! -e ${readline[2]} ]]; then
         if [[ ${freespace[$devnum]} -gt ${setfree[$devnum]} ]]; then
           if [[ "$TESTRUN" == "YES" ]]; then
-            echo "DEVICE $devicename: ENOUGH FREESPACE ON THIS DEVICE ($((${freespace[$devnum]}/1024))MB)."
+            echo "DEVICE #$devnum $devicename: ENOUGH FREESPACE ON THIS DEVICE ($((${freespace[$devnum]}/1024))MB)."
           fi
           break
         fi
@@ -332,26 +346,30 @@ makefree()
 {
   while read -a readline; do
     if [[ ${datelimit_sec[$secnum]} -gt 0 && ${datelimit_sec[$secnum]} -lt ${readline[0]} ]]; then
+        if [[ "$TESTRUN" == "YES" ]]; then
+          echo -e "DEVICE #$devnum $devicename: SECTION $modname: SECTIONSPACE ACHIEVED BY DATE - CONTINUING TO NEXT.\n"
+        fi
       break
     fi
     if [[ $devnum -eq ${readline[4]} && $secnum -eq ${readline[3]} && (${datelimit_sec[$secnum]} -ge ${readline[0]} || ${datelimit_sec[$secnum]} -eq 0) ]]; then
       if [[ "${section_statsec[$secnum]}" != "YES" && "${section_archive[$secnum]}" != "YES" ]]; then
         break
       fi
-      if [[ ${freespace[$devnum]} -gt ${setfree[$devnum]} ]]; then
-        if [[ "${section_type[$secnum]}" == "SIZE" && ${section_space[$secnum]} -ne 0 && ${section_space[$secnum]} -le ${dsize[$secnum]} && "${section_statsec[$secnum]}" == "YES" ]]; then
+      if [[ ${freespace[$devnum]} -gt ${setfree[$devnum]} && "${section_statsec[$secnum]}" != "YES" ]]; then
+        if [[ "$TESTRUN" == "YES" ]]; then
+          echo -e "DEVICE #$devnum $devicename: SECTION $modname: SECTIONSPACE ACHIEVED ($((${section_space[$secnum]}/1024))MB) - CONTINUING TO NEXT.\n"
+        fi
+        break
+      fi
+      if [[ ${freespace[$devnum]} -gt ${setfree[$devnum]} && "${section_statsec[$secnum]}" == "YES" ]]; then
+        if [[ "${section_type[$secnum]}" == "SIZE" && ${section_space[$secnum]} -ne 0 && ${section_space[$secnum]} -le ${dsize[$secnum]} ]]; then
           if [[ "$TESTRUN" == "YES" ]]; then
-            echo -e "DEVICE $devicename: SECTION $modname: SECTIONSPACE ACHIEVED ($((${section_space[$secnum]}/1024))MB) - CONTINUING TO NEXT.\n"
+            echo -e "DEVICE #$devnum $devicename: SECTION $modname: SECTIONSPACE ACHIEVED ($((${section_space[$secnum]}/1024))MB) - CONTINUING TO NEXT.\n"
           fi
           break
-        elif [[ "${section_type[$secnum]}" == "FILES" && ${calc_secfiles[$secnum]} -le ${dfiles[$secnum]} && "${section_statsec[$secnum]}" == "YES" ]]; then
+        elif [[ "${section_type[$secnum]}" == "FILES" && ${calc_secfiles[$secnum]} -le ${dfiles[$secnum]} ]]; then
           if [[ "$TESTRUN" == "YES" ]]; then
-            echo "DEVICE $devicename: SECTION $modname: SECTIONSPACE ACHIEVED (${calc_secfiles[$secnum]}FILES) - CONTINUING TO NEXT."
-          fi
-          break
-        elif [[ "${section_archive[$secnum]}" == "YES" ]]; then
-          if [[ "$TESTRUN" == "YES" ]]; then
-            echo -e "DEVICE $devicename: SECTION $modname: SECTIONSPACE ACHIEVED ($((${section_space[$secnum]}/1024))MB) - CONTINUING TO NEXT.\n"
+            echo "DEVICE #$devnum $devicename: SECTION $modname: SECTIONSPACE ACHIEVED (${calc_secfiles[$secnum]}FILES) - CONTINUING TO NEXT."
           fi
           break
         fi
@@ -364,7 +382,7 @@ makefree()
 runfree()
 {
   for modname in ${dirs[$devnum]}; do
-    if [[ -z "$(echo $modname | grep ':' | cut -d ':' -f 2)" && -z "$(echo $modname | grep ':' | cut -d ':' -f 1 | tr -cd '%')" ]]; then
+    if [[ -z "$(echo $modname | grep ':' | cut -d ':' -f 2)" && -z "$(echo $modname | grep ':' | cut -d ':' -f 1 | cut -d '|' -f 1 | tr -cd '%')" ]]; then
       continue
     fi
     let secnum=secnum+1
@@ -385,7 +403,7 @@ runfree()
 ######## Main part ########
 
 # VERSION
-version=0.6
+version=0.7
 
 # Find and read psxc-free.conf
 readconf
@@ -420,7 +438,7 @@ while [ "$devicename" ]; do
   fi
 
   if [[ "$TESTRUN" == "YES" ]]; then
-    echo "MAPPING SECTIONS ON DEVICE #$devnum $devicename: (${dirs[$devnum]}) FREESPACE IS: $((${freespace[$devnum]}/1024))MB"
+    echo "DEVICE #$devnum $devicename: (${dirs[$devnum]}) FREESPACE IS: $((${freespace[$devnum]}/1024))MB - MAPPING SECTIONS"
   fi
 
   # should we create today's date?
@@ -440,13 +458,13 @@ while [ "$devicename" ]; do
 
   # availible space is below minimum allowed
   for modname in ${dirs[$devnum]}; do
-    if [[ -z "$(echo $modname | grep ':' | cut -d ":" -f 2)" && -z "$(echo $modname | cut -d ':' -f 1 | tr -cd '%')" ]]; then
+    if [[ -z "$(echo $modname | grep ':' | cut -d ':' -f 2)" && -z "$(echo $modname | cut -d ':' -f 1 | cut -d '|' -f 1 | tr -cd '%')" ]]; then
       continue
     fi
     let secnum=secnum+1
     section_space[$secnum]=0
     calc_secfiles[$secnum]=0
-    dirname[$secnum]=$SITEDIR/$(echo $modname | cut -d ":" -f 1)
+    dirname[$secnum]=$SITEDIR/$(echo $modname | cut -d ':' -f 1 | cut -d '|' -f 1)
 
     # calc sectionsizes
     calc_secsize
@@ -454,7 +472,7 @@ while [ "$devicename" ]; do
     # grab archive info
     grab_archinfo
 
-    if [[ ! -z "$(echo "${dirname[$secnum]}" | tr -cd "%")" ]]; then
+    if [[ ! -z "$(echo "${dirname[$secnum]}" | tr -cd '%')" ]]; then
       # dated dir structure.
       grab_dated
     else
@@ -476,7 +494,7 @@ sort $TEMPFILE1 >$TEMPFILE2
   devnum=1
   eval devicename=\$DEVICENAME_$devnum
   while [ ! -z "$devicename" ]; do
-    if [[ -z "${freespace[$devnum]}" || "${device_archive[$devnum]}" != "YES" || (${freespace[$devnum]} -gt ${setfree[$devnum]} && "${device_statsec[$devnum]}" != "YES" && "${device_archive[$devnum]}" != "YES") ]]; then
+    if [[ -z "${freespace[$devnum]}" || (${freespace[$devnum]} -gt ${setfree[$devnum]} && "${device_statsec[$devnum]}" != "YES" && "${device_archive[$devnum]}" != "YES") ]]; then
       let devnum=devnum+1
       eval devicename=\$DEVICENAME_$devnum
       continue
@@ -542,6 +560,7 @@ while read -a readmove; do
       destdir=$(echo ${SITEDIR}/${arcdatedir} | tr -s '/')
       mkdir -m0777 -p $destdir
       mv -fRp ${readmove[0]} $destdir/
+      rmdir $(dirname ${readmove[0]})
       $GLUPDATE -r $glconf $destdir/$(basename ${readmove[0]})
     fi
   fi

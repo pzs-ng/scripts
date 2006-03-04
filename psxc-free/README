@@ -12,7 +12,7 @@ as you see fit, even archive non-dated items to dated dirs.
 Quota support is ofcourse present, giving you better control of how much
 space should be used in each section. Quotas can be absolute or dynamic.
 Quotas can be specified based on size, number of files or age.
-
+Creation of today's dir is supported, as well as creating a symlink to it.
 
 CONFIG
 ------
@@ -78,6 +78,14 @@ DEVICENAME_#      - This is the device we check for freespace. Usually it is
                     Syntax: <PATH>
                     Examples: "DIVX/*" and "/0DAY/%m%d"
 
+                    If you wish to make a symlink to today's dir automatically,
+                    you should enter the name of it after a '|'-char. Please
+                    note that the symlink will only be updated/created if
+                    today's dated dir does not exist, and the script need to
+                    create it.
+                    Syntax: <PATH>|<SYMNAME>
+                    Example: "/0DAY/%m%d|TODAY-0DAY"
+
                     If you wish to have some sort of quota setup, add a colon
                     and a size after the dir, like APPS/*:60G. 'M' and 'm'
                     signify megabytes, 'G' and 'g' is gigabytes, 'G' and 'g'
@@ -96,16 +104,18 @@ DEVICENAME_#      - This is the device we check for freespace. Usually it is
                     be removed.
                     If you do not specify a type of size after the number,
                     dynamic megabytes will be used.
-                    Syntax: <PATH>:<SIZE>
-                    Examples: "DIVX/*:50G" and "0DAY/%m%d:70%"
+                    Syntax: <PATH>|<SYMNAME>:<SIZE>
+                    Examples: "DIVX/*:50G" and "0DAY/%m%d|TODAY-0DAY:70%"
 
                     If you wish to archive dirs you need to add the dir to put
                     the archived items. You also should add a number after that
                     which signify the device the archive is on. If no number is
                     set, current devicenumber is used.
-                    Syntax: <PATH>:<SIZE>:<ARCHIVEDIR>:<DEVICE_#>
+                    Syntax: <PATH>|<SYMNAME>:<SIZE>:<ARCHIVEDIR>:<DEVICE_#>
                     <SIZE> and <DEVICE_#> is optional.
-                    Examples: "DIVX/*:50G:MOVIES:6" and "0DAY/%m%d::ARCHIVE/%Y%m:2"
+                    Examples: "DIVX/*:50G:MOVIES:6" and "0DAY/%m%d|TODAY-0DAY::ARCHIVE/%Y%m:2"
+
+                    Please note that empty dirs will be removed.
 
 
 INSTALLATION
