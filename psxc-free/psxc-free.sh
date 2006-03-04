@@ -75,7 +75,7 @@ freeupspace()
       if [[ ! -z "$delfile" ]]; then
         if [[ "$TESTRUN" != "YES" ]]; then
           echo "$(date "+%a %b %e %T %Y") PSXCFREE: {$(echo /$1 | sed "s|$GLROOT||" | tr -s '/' | sed "s|/$||")} {$2}" >> $GLLOG
-echo          rm -fR $delfile
+          rm -fR $delfile
         else
           echo "DEVICE $devicename: REMOVING $1 - FREEING $((${2}/1024))M ($((${freespace[$devnum]}/1024)))"
         fi
@@ -182,7 +182,7 @@ create_today()
     if [[ "$CREATEDATE" == "YES" ]]; then
       if [[ ! -z "$(echo "$dirname" | grep "%")" ]]; then
         if [[ ! -e $(date +$dirname) ]]; then
-echo          mkdir -m0777 -p $(date +$dirname)
+          mkdir -m0777 -p $(date +$dirname)
         fi
       fi
     fi
@@ -377,10 +377,8 @@ runfree()
         continue
       fi
     fi
-echo ">>> $modname : $secnum : ${section_archive[$secnum]} : ${section_statsec[$secnum]}"
     makefree
     section_archive[$secnum]="NO"
-#    section_statsec[$secnum]="NO"
   done
 }
 
@@ -542,8 +540,8 @@ while read -a readmove; do
       echo "MOVING ${readmove[0]} to ${SITEDIR}/${arcdatedir}"
     else
       destdir=$(echo ${SITEDIR}/${arcdatedir} | tr -s '/')
-echo      mkdir -m0777 -p $destdir
-echo      mv -fRp ${readmove[0]} $destdir/
+      mkdir -m0777 -p $destdir
+      mv -fRp ${readmove[0]} $destdir/
       $GLUPDATE -r $glconf $destdir/$(basename ${readmove[0]})
     fi
   fi
