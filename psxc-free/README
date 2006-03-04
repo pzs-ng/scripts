@@ -8,9 +8,10 @@ freespace script it does not have a lot of options, or advanced configs.
 Yet it still does the basics for almost any site, namely remove the oldest
 dir(s) when availible space is low, or move them to a different location.
 There is no special dated dir options - you can mix dated and non-dated dirs
-without concern.
+as you see fit, even archive non-dated items to dated dirs.
 Quota support is ofcourse present, giving you better control of how much
 space should be used in each section. Quotas can be absolute or dynamic.
+Quotas can be specified based on size, number of files or age.
 
 
 CONFIG
@@ -47,6 +48,7 @@ EXCLUDES          - The following pattern of files is ignored by the script, and
                     pattern.
                     Example: "^#|\<^PRE\>|\<^GROUPS\>|^\-"
 
+
 Next up follow device-specific variables. These are marked with a _# where # is
 a number starting with 1 (not 0), signifying the device number.
 
@@ -81,11 +83,17 @@ DEVICENAME_#      - This is the device we check for freespace. Usually it is
                     signify megabytes, 'G' and 'g' is gigabytes, 'G' and 'g'
                     is gigabytes, 'P' and '%' is percentage of total diskspace,
                     'F' and 'f' is number of files allowed in section.
-                    'M', 'G', 'T', 'P' and 'F' mark an section absolute - the
-                    size given will be achieved no matter how much free space
-                    the device have.
-                    'm', 'g', 't', '%' and 'f' mark a section dynamic - unless
-                    the device is under MINFREE_#, nothing will be removed.
+                    Then there are 'D' and 'd' for days, 'W' and 'w' for weeks,
+                    and 'L' and 'l' for months (the letter 'M' was busy ;P) -
+                    these signify the entire day/week/month - 2W == this week
+                    and previous for instance, no matter what day in the week
+                    the script is run.
+                    'M', 'G', 'T', 'P', 'F', 'D', 'W' and 'L' mark an section as
+                    absolute - the size given will be achieved no matter how
+                    much free spacw the device have.
+                    'm', 'g', 't', '%', 'f', 'd', 'w' and 'l' mark a section as
+                    dynamic - unless the device is under MINFREE_#, nothing will
+                    be removed.
                     If you do not specify a type of size after the number,
                     dynamic megabytes will be used.
                     Syntax: <PATH>:<SIZE>
