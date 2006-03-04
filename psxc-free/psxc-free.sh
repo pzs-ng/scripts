@@ -54,10 +54,8 @@ freeupspace()
   if [[ -z "$(basename $1 | grep -E "$excludes")" ]]; then
     if [[ "${device_archive[$devnum]}" == "YES" && "${section_archive[$secnum]}" == "YES" && $6 -gt 0 ]]; then
       if [[ "${4}" != "NULL" ]]; then
-        echo -e "$1\t$4\t$6" >>$TEMPFILE3
-        if [[ "$TESTRUN" != "YES" ]]; then
-          echo "$(date "+%a %b %e %T %Y") PSXCFREE_A: {$(echo /$1 | sed "s|$GLROOT||" | tr -s '/' | sed "s|/$||")} {$2}" >> $GLLOG
-        else
+        echo -e "$1\t$4\t$6\t$2" >>$TEMPFILE3
+        if [[ "$TESTRUN" == "YES" ]]; then
           echo "DEVICE #$devnum $devicename: MARKING $1 - FREEING $((${2}/1024))MB"
         fi
         let freespace[$devnum]=${freespace[$devnum]}+${2}
@@ -83,7 +81,7 @@ freeupspace()
         else
           echo "DEVICE #$devnum $devicename: REMOVING $1 - FREEING $((${2}/1024))MB"
         fi
-#        echo -e "$1\t$4\t$6\talready_removed" >>$TEMPFILE3
+#        echo -e "$1\t$4\t$6\t$2\talready_removed" >>$TEMPFILE3
         let freespace[$devnum]=${freespace[$devnum]}+${2}
         let section_space[$secnum]=${section_space[$secnum]}-${2}
         if [[ "$3" != "NULL" ]]; then
@@ -403,7 +401,7 @@ runfree()
 ######## Main part ########
 
 # VERSION
-version=0.7
+version=0.8
 
 # Find and read psxc-free.conf
 readconf
@@ -539,32 +537,35 @@ sort $TEMPFILE1 >$TEMPFILE2
   done
 
 # Move previously marked dirs correctly
-if [[ "$TESTRUN" == "YES" ]]; then
-  echo "MOVING DIRS PREVIOUSLY MARKED"
-fi
-while read -a readmove; do
-  if [[ ! -z "${readmove[0]}" && -z "${readmove[3]}" ]]; then
-    dateskew=$($MDATE ${readmove[0]} ${readmove[2]} dummyflag)
-    if [ "$USEGNUDATE" != "YES" ]; then
-      arcdatedir=$(date -v-${dateskew}S +${readmove[1]})
-    else
-      arcday=$((${readmove[2]}/86400))
-      archour=$(((${readmove[2]}%86400)/3600))
-      arcmin=$((((${readmove[2]}%86400)%3600)/60))
-      arcsec=$((((${readmove[2]}%86400)%3600)%60))
-      arcdatedir=$(date --date "-$arcday day -$archour hour -$arcmin min -$arcsec sec" +${readmove[1]})
-    fi
-    if [[ "$TESTRUN" == "YES" ]]; then
-      echo "MOVING ${readmove[0]} to ${SITEDIR}/${arcdatedir}"
-    else
-      destdir=$(echo ${SITEDIR}/${arcdatedir} | tr -s '/')
-      mkdir -m0777 -p $destdir
-      mv -fRp ${readmove[0]} $destdir/
-      rmdir $(dirname ${readmove[0]})
-      $GLUPDATE -r $glconf $destdir/$(basename ${readmove[0]})
-    fi
+if [[ -s $TEMPFILE3 ]]; then
+  if [[ "$TESTRUN" == "YES" ]]; then
+    echo "MOVING DIRS PREVIOUSLY MARKED FOR ARCHIVING"
   fi
-done < $TEMPFILE3
+  while read -a readmove; do
+    if [[ ! -z "${readmove[0]}" && -z "${readmove[4]}" ]]; then
+      dateskew=$($MDATE ${readmove[0]} ${readmove[2]} dummyflag)
+      if [ "$USEGNUDATE" != "YES" ]; then
+        arcdatedir=$(date -v-${dateskew}S +${readmove[1]})
+      else
+        arcday=$((${readmove[2]}/86400))
+        archour=$(((${readmove[2]}%86400)/3600))
+        arcmin=$((((${readmove[2]}%86400)%3600)/60))
+        arcsec=$((((${readmove[2]}%86400)%3600)%60))
+       arcdatedir=$(date --date "-$arcday day -$archour hour -$arcmin min -$arcsec sec" +${readmove[1]})
+      fi
+      if [[ "$TESTRUN" == "YES" ]]; then
+        echo "MOVING ${readmove[0]} to ${SITEDIR}/${arcdatedir}"
+      else
+        destdir=$(echo ${SITEDIR}/${arcdatedir} | tr -s '/')
+        echo "$(date "+%a %b %e %T %Y") PSXCARCH: {$(echo /${readmove[0]} | sed "s|$GLROOT||" | tr -s '/' | sed "s|/$||")} {$(echo /$destdir/$(basename ${readmove[0]}) | sed "s|$GLROOT||" | tr -s '/' | sed "s|/$||")} {${readmove[3]}}" >> $GLLOG
+        mkdir -m0777 -p $destdir
+        mv -fRp ${readmove[0]} $destdir/
+        rmdir $(dirname ${readmove[0]})
+        $GLUPDATE -r $glconf $destdir/$(basename ${readmove[0]})
+      fi
+    fi
+  done < $TEMPFILE3
+fi
 if [[ "$TESTRUN" == "YES" ]]; then
   echo -e "\n$(date "+%a %b %e %T %Y") PSXC-FREE v${version} completed."
 else

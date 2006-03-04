@@ -14,6 +14,7 @@ space should be used in each section. Quotas can be absolute or dynamic.
 Quotas can be specified based on size, number of files or age.
 Creation of today's dir is supported, as well as creating a symlink to it.
 
+
 CONFIG
 ------
 PATH              - The usual PATH variable. Should contain all dirs where
@@ -110,7 +111,8 @@ DEVICENAME_#      - This is the device we check for freespace. Usually it is
                     If you wish to archive dirs you need to add the dir to put
                     the archived items. You also should add a number after that
                     which signify the device the archive is on. If no number is
-                    set, current devicenumber is used.
+                    set, current devicenumber is used. Setting a bogus device-
+                    number is allowed.
                     Syntax: <PATH>|<SYMNAME>:<SIZE>:<ARCHIVEDIR>:<DEVICE_#>
                     <SIZE> and <DEVICE_#> is optional.
                     Examples: "DIVX/*:50G:MOVIES:6" and "0DAY/%m%d|TODAY-0DAY::ARCHIVE/%Y%m:2"
@@ -123,13 +125,32 @@ INSTALLATION
 Copy psxc-free.conf to /glftpd/etc and psxc-free.sh to /glftpd/bin, or have them
 both in the same dir. Usually there's no need to edit psxc-find.sh - it'll let
 you know if something's up.
+Also make sure you cd to psxc-mdate/ dir and run the ./compile.sh script - this
+will compile and install a necessary binary needed by the script.
 
-To make it run, add it as a crontab entry, like this:
+To make the script run, add it as a crontab entry, like this:
 
 15,45 * * * * /glftpd/bin/psxc-free.sh >/glftpd/ftp-data/logs/psxc-free.log 2>&1
 
 This will make the script run 2 times an hour, and log what it does and any
 errors to a logfile.
+
+Before you set it up in crontab, i highly recommend you run it in testmode, to
+make sure it behaves as it should. And please, ignore any // you see or any /
+at the end of dirs - they won't matter.
+
+
+LOGGING TO GLFTPD.LOG
+---------------------
+The script logs to glftpd.log by default. To actually make use of the loglines,
+you need to set up your bot. There are two types of lines:
+
+PSXCFREE: {%pf} {%size}
+PSXCARCH: {%pf} {%pf-dest} {%size}
+
+PSXCFREE is used when a dir is deleted, PSXCARCH when a dir is moved. %pf is
+path to dir deleted/moved, %pf-dest is the new path of the moved dir, including
+the actual name of the dir, and %size is size of the deleted/moved dir in KB.
 
 
 A NOTE ABOUT ARCHIVING
