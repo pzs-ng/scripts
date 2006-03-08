@@ -49,6 +49,11 @@ EXCLUDES          - The following pattern of files is ignored by the script, and
                     pattern.
                     Example: "^#|\<^PRE\>|\<^GROUPS\>|^\-"
 
+NICELEVEL         - This is the "nice" level the script will run external
+                    commands with. Setting this to a high number will lower the
+                    priority of the process, increasing the time it takes to
+                    perform an action, but your system benefits by not getting
+                    under a high load. See 'man 1 nice' for more info on this.
 
 Next up follow device-specific variables. These are marked with a _# where # is
 a number starting with 1 (not 0), signifying the device number.

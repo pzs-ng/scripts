@@ -8,14 +8,14 @@ CONF=/glftpd/etc/psxc-free.conf
 logsimpledir()
 {
   if [[ -d $1 ]]; then
-    mdate=$($MDATE $1 $2)
-    dsize=$(du -skxP $1 | awk '{print $1}')
+    mdate=$(nice -n $NICELEVEL $MDATE $1 $2)
+    dsize=$(nice -n $NICELEVEL du -skxP $1 | nice -n $NICELEVEL awk '{print $1}')
     if [[ "${section_type[$secnum]}" == "FILES" ]]; then
       let calc_secfiles[$secnum]=${calc_secfiles[$secnum]}+1
     else
       let section_space[$secnum]=${section_space[$secnum]}+$dsize
     fi
-    if [[ ! -z "$(basename $1 | grep -E "$delfirst")" && $mdate -le $delfirsttime ]]; then
+    if [[ ! -z "$(basename $1 | nice -n $NICELEVEL grep -E "$delfirst")" && $mdate -le $delfirsttime ]]; then
       mdate=0
     fi
     echo -e "$mdate\t$dsize\t$1\t$secnum\t$devnum" >>$TEMPFILE1
@@ -51,7 +51,7 @@ logdir()
 
 freeupspace()
 {
-  if [[ -z "$(basename $1 | grep -E "$excludes")" ]]; then
+  if [[ -z "$(basename $1 | nice -n $NICELEVEL grep -E "$excludes")" ]]; then
     if [[ "${device_archive[$devnum]}" == "YES" && "${section_archive[$secnum]}" == "YES" && $6 -gt 0 ]]; then
       if [[ "${4}" != "NULL" ]]; then
         echo -e "$1\t$4\t$6\t$2" >>$TEMPFILE3
@@ -75,10 +75,10 @@ freeupspace()
       done < $TEMPFILE3
       if [[ ! -z "$delfile" ]]; then
         if [[ "$TESTRUN" != "YES" ]]; then
-          echo "$(date "+%a %b %e %T %Y") PSXCFREE: {$(echo /$1 | sed "s|$GLROOT||" | tr -s '/' | sed "s|/$||")} {$2}" >> $GLLOG
-          rm -fR $delfile
+          echo "$(nice -n $NICELEVEL date "+%a %b %e %T %Y") PSXCFREE: {$(echo /$1 | sed "s|$GLROOT||" | tr -s '/' | sed "s|/$||")} {$2}" >> $GLLOG
+          nice -n $NICELEVEL rm -fR $delfile
           if [[ $(ls -1 $(dirname $delfile)) -eq 0 ]]; then
-            rmdir $(dirname $delfile)
+            nice -n $NICELEVEL rmdir $(dirname $delfile)
           fi
         else
           echo "DEVICE #$devnum $devicename: REMOVING $1 - FREEING $((${2}/1024))MB"
@@ -111,24 +111,24 @@ initialize_devvars()
   device_archive[$devnum]=${device_archive[$devnum]:-"NO"}
   device_statsec[$devnum]=${device_statsec[$devnum]:-"NO"}
   for modname in ${dirs[$devnum]}; do
-    if [[ ! -z "$(echo $modname | grep ':' | cut -d ':' -f 3)" ]]; then
+    if [[ ! -z "$(echo $modname | nice -n $NICELEVEL grep ':' | cut -d ':' -f 3)" ]]; then
       # section archiving on device
       device_archive[$devnum]="YES"
     fi
-    if [[ ! -z "$(echo $modname | grep ':' | cut -d ':' -f 2)" ]]; then
+    if [[ ! -z "$(echo $modname | nice -n $NICELEVEL grep ':' | cut -d ':' -f 2)" ]]; then
       # sections on device
       device_section[$devnum]="YES"
     fi
-    if [[ ! -z "$(echo $modname | grep ':' | cut -d ':' -f 2 | tr -cd 'MGTPFDWL')" ]]; then
+    if [[ ! -z "$(echo $modname | nice -n $NICELEVEL grep ':' | cut -d ':' -f 2 | tr -cd 'MGTPFDWL')" ]]; then
       # sections on device
       device_statsec[$devnum]="YES"
     fi
   done
-  freespace[$devnum]=$(df -Pk | grep ^$devicename | awk '{print $4}')
+  freespace[$devnum]=$(nice -n $NICELEVEL df -Pk | nice -n $NICELEVEL grep ^$devicename | nice -n $NICELEVEL awk '{print $4}')
   if [ "$USEGNUDATE" != "YES" ]; then
-    delfirsttime=$(date -v-${DELFIRSTTIME}H +%s)
+    delfirsttime=$(nice -n $NICELEVEL date -v-${DELFIRSTTIME}H +%s)
   else
-    delfirsttime=$(date --date "-${DELFIRSTTIME} hour" +%s)
+    delfirsttime=$(nice -n $NICELEVEL date --date "-${DELFIRSTTIME} hour" +%s)
   fi
 }
 
@@ -154,16 +154,16 @@ readglconf()
 {
   if [[ -z "$GLCONF" || ! -e $GLCONF ]]; then
     if [[ -e /etc/inetd.conf ]]; then
-      glconf=$(grep $GLROOT /etc/inetd.conf | grep -- -r | grep -v ^# | tr '-' '\n' | grep "^r\ " | head -n 1 | awk '{print $2}')
+      glconf=$(nice -n $NICELEVEL grep $GLROOT /etc/inetd.conf | nice -n $NICELEVEL grep -- -r | nice -n $NICELEVEL grep -v ^# | tr '-' '\n' | nice -n $NICELEVEL grep "^r\ " | head -n 1 | nice -n $NICELEVEL awk '{print $2}')
     elif [[ -d /etc/xinetd.d ]]; then
       for xfile in /etc/xinetd.d/*; do
-        glconf=$(grep $GLROOT $xfile | grep -- -r | grep -v ^# | tr '-' '\n' | grep "^r\ " | head -n 1 | awk '{print $2}')
+        glconf=$(nice -n $NICELEVEL grep $GLROOT $xfile | nice -n $NICELEVEL grep -- -r | nice -n $NICELEVEL grep -v ^# | tr '-' '\n' | nice -n $NICELEVEL grep "^r\ " | head -n 1 | nice -n $NICELEVEL awk '{print $2}')
         if [[ ! -z "$glconf" ]]; then
           break
         fi
       done
       if [[ -z "$glconf" ]]; then
-        glconf=$(grep $GLROOT /etc/xinetd.conf | grep -- -r | grep -v ^# | tr '-' '\n' | grep "^r\ " | head -n 1 | awk '{print $2}')
+        glconf=$(nice -n $NICELEVEL grep $GLROOT /etc/xinetd.conf | nice -n $NICELEVEL grep -- -r | nice -n $NICELEVEL grep -v ^# | tr '-' '\n' | nice -n $NICELEVEL grep "^r\ " | head -n 1 | nice -n $NICELEVEL awk '{print $2}')
       fi
     fi
     if [[ -z "$glconf" ]]; then
@@ -193,14 +193,14 @@ create_today()
 {
   for modname in ${dirs[$devnum]}; do
     dirname=$(echo $modname | cut -d ':' -f 1 | cut -d '|' -f 1 | tr -d '\*')
-    symname=$(echo $modname | cut -d ':' -f 1 | grep '|' | cut -d '|' -f 2 | tr -d '\*')
+    symname=$(echo $modname | cut -d ':' -f 1 | nice -n $NICELEVEL grep '|' | cut -d '|' -f 2 | tr -d '\*')
     if [[ "$CREATEDATE" == "YES" ]]; then
-      if [[ ! -z "$(echo "$dirname" | grep "%")" ]]; then
-        if [[ ! -e $SITEDIR/$(date +$dirname) ]]; then
-          mkdir -m0777 -p $SITEDIR/$(date +$dirname)
+      if [[ ! -z "$(echo "$dirname" | nice -n $NICELEVEL grep "%")" ]]; then
+        if [[ ! -e $SITEDIR/$(nice -n $NICELEVEL date +$dirname) ]]; then
+          mkdir -m0777 -p $SITEDIR/$(nice -n $NICELEVEL date +$dirname)
           if [[ ! -z "$symname" ]]; then
-            rm $SITEDIR/$symname
-            ln -s ./$(date +$dirname) $SITEDIR/$symname
+            nice -n $NICELEVEL rm $SITEDIR/$symname
+            ln -s ./$(nice -n $NICELEVEL date +$dirname) $SITEDIR/$symname
           fi
         fi
       fi
@@ -210,7 +210,7 @@ create_today()
 
 calc_secsize()
 {
-  if [[ ! -z "$(echo $modname | grep ':' | cut -d ':' -f 2)" ]]; then
+  if [[ ! -z "$(echo $modname | nice -n $NICELEVEL grep ':' | cut -d ':' -f 2)" ]]; then
     ssize=$(echo $modname | cut -d ':' -f 2)
     dsize[$secnum]=$(echo $ssize | tr -cd '0-9')
     dfiles[$secnum]=0
@@ -225,7 +225,7 @@ calc_secsize()
         section_type[$secnum]="SIZE"
         ;;
       *[P\%]*)
-        tsize=$(df -Pm | grep ^$devicename | awk '{print $2}')
+        tsize=$(nice -n $NICELEVEL df -Pm | nice -n $NICELEVEL grep ^$devicename | nice -n $NICELEVEL awk '{print $2}')
         let dsize[$secnum]=tsize*${dsize[$secnum]}/100
         section_type[$secnum]="SIZE"
         ;;
@@ -250,19 +250,19 @@ calc_secsize()
     if [[ "${section_type[$secnum]}" == "DAY" || "${section_type[$secnum]}" == "WEEK" || "${section_type[$secnum]}" == "MONTH" ]]; then
       if [[ "$USEGNUDATE" == "YES" ]]; then
         if [[ "${section_type[$secnum]}" == "DAY" ]]; then
-          datelimit_sec[$secnum]=$(($(date +%s)-$(date --date="-${dsize[$secnum]} day + 1 day 0000" +%s)))
+          datelimit_sec[$secnum]=$(($(nice -n $NICELEVEL date +%s)-$(nice -n $NICELEVEL date --date="-${dsize[$secnum]} day + 1 day 0000" +%s)))
         elif [[ "${section_type[$secnum]}" == "WEEK" ]]; then
-          datelimit_sec[$secnum]=$(($(date +%s)-$(date --date="-${dsize[$secnum]} week mon 0000" +%s)))
+          datelimit_sec[$secnum]=$(($(nice -n $NICELEVEL date +%s)-$(nice -n $NICELEVEL date --date="-${dsize[$secnum]} week mon 0000" +%s)))
         else
-          datelimit_sec[$secnum]=$(($(date +%s)-$(date --date="$(date +%Y-%m)-${dsize[$secnum]}" +%s)))
+          datelimit_sec[$secnum]=$(($(nice -n $NICELEVEL date +%s)-$(nice -n $NICELEVEL date --date="$(nice -n $NICELEVEL date +%Y-%m)-${dsize[$secnum]}" +%s)))
         fi
       else
         if [[ "${section_type[$secnum]}" == "DAY" ]]; then
-          datelimit_sec[$secnum]=$(date -j -f "%a %b %d %T %Z %Y" "$(date -j -v-${dsize[$secnum]}d 0000)" "+%s")
+          datelimit_sec[$secnum]=$(nice -n $NICELEVEL date -j -f "%a %b %d %T %Z %Y" "$(nice -n $NICELEVEL date -j -v-${dsize[$secnum]}d 0000)" "+%s")
         elif [[ "${section_type[$secnum]}" == "WEEK" ]]; then
-          datelimit_sec[$secnum]=$(date -j -f "%a %b %d %T %Z %Y" "$(date -j -v-${dsize[$secnum]}w -v+1w -v-mon 0000)" "+%s")
+          datelimit_sec[$secnum]=$(nice -n $NICELEVEL date -j -f "%a %b %d %T %Z %Y" "$(nice -n $NICELEVEL date -j -v-${dsize[$secnum]}w -v+1w -v-mon 0000)" "+%s")
         else
-          datelimit_sec[$secnum]=$(date -j -f "%a %b %d %T %Z %Y" "$(date -j -v-${dsize[$secnum]}m -v+1m -v1d 0000)" "+%s")
+          datelimit_sec[$secnum]=$(nice -n $NICELEVEL date -j -f "%a %b %d %T %Z %Y" "$(nice -n $NICELEVEL date -j -v-${dsize[$secnum]}m -v+1m -v1d 0000)" "+%s")
         fi
       fi
       dsize[$secnum]=0
@@ -286,7 +286,7 @@ calc_secsize()
 
 grab_archinfo()
 {
-  if [[ ! -z "$(echo $modname | grep ':' | cut -d ':' -f 3)" ]]; then
+  if [[ ! -z "$(echo $modname | nice -n $NICELEVEL grep ':' | cut -d ':' -f 3)" ]]; then
     archdirname[$secnum]=$(echo $modname | cut -d ':' -f 3)
     archdevnum[$secnum]=$(echo $modname | cut -d ':' -f 4)
     section_archive[$secnum]="YES"
@@ -306,9 +306,9 @@ grab_dated()
   datedir=0
   while [ $currdaysback -ge 0 ]; do
     if [ "$USEGNUDATE" != "YES" ]; then
-      currdatedir=$(date -v-${currdaysback}d +${dirname[$secnum]})
+      currdatedir=$(nice -n $NICELEVEL date -v-${currdaysback}d +${dirname[$secnum]})
     else
-      currdatedir=$(date --date "-${currdaysback} day" +${dirname[$secnum]})
+      currdatedir=$(nice -n $NICELEVEL date --date "-${currdaysback} day" +${dirname[$secnum]})
     fi
     if [[ "${currdatedir}" == "${datedir}" ]]; then
       let currdaysback=currdaysback-1
@@ -382,7 +382,7 @@ makefree()
 runfree()
 {
   for modname in ${dirs[$devnum]}; do
-    if [[ -z "$(echo $modname | grep ':' | cut -d ':' -f 2)" && -z "$(echo $modname | grep ':' | cut -d ':' -f 1 | cut -d '|' -f 1 | tr -cd '%')" ]]; then
+    if [[ -z "$(echo $modname | nice -n $NICELEVEL grep ':' | cut -d ':' -f 2)" && -z "$(echo $modname | nice -n $NICELEVEL grep ':' | cut -d ':' -f 1 | cut -d '|' -f 1 | tr -cd '%')" ]]; then
       continue
     fi
     let secnum=secnum+1
@@ -403,7 +403,7 @@ runfree()
 ######## Main part ########
 
 # VERSION
-version=0.9
+version=0.91
 
 # Find and read psxc-free.conf
 readconf
@@ -411,10 +411,19 @@ readconf
 # Find location of glftpd.conf
 readglconf
 
+# check if already running
+if [[ -e $TEMPDIR/psxc-free.pid ]]; then
+  if [[ $(nice -n $NICELEVEL ps | nice -n $NICELEVEL grep ^$(cat $TEMPDIR/psxc-free.pid)) ]]; then
+    echo "Already running another version of $(basename $0) - exiting."
+    exit 1
+  fi
+fi
+echo $$ > $TEMPDIR/psxc-free.pid
+
 devnum=1
 eval devicename=\$DEVICENAME_$devnum
 if [[ "$TESTRUN" == "YES" ]]; then
-  echo -e "$(date "+%a %b %e %T %Y") PSXC-FREE v${version} started.\n"
+  echo -e "$(nice -n $NICELEVEL date "+%a %b %e %T %Y") PSXC-FREE v${version} started.\n"
 fi
 TEMPFILE1=$TEMPDIR/psxc-free.tx1
 TEMPFILE2=$TEMPDIR/psxc-free.tx2
@@ -458,7 +467,7 @@ while [ "$devicename" ]; do
 
   # availible space is below minimum allowed
   for modname in ${dirs[$devnum]}; do
-#    if [[ -z "$(echo $modname | grep ':' | cut -d ':' -f 2)" && -z "$(echo $modname | cut -d ':' -f 1 | cut -d '|' -f 1 | tr -cd '%')" ]]; then
+#    if [[ -z "$(echo $modname | nice -n $NICELEVEL grep ':' | cut -d ':' -f 2)" && -z "$(echo $modname | cut -d ':' -f 1 | cut -d '|' -f 1 | tr -cd '%')" ]]; then
 #      continue
 #    fi
     let secnum=secnum+1
@@ -545,38 +554,39 @@ if [[ -s $TEMPFILE3 ]]; then
   fi
   while read -a readmove; do
     if [[ ! -z "${readmove[0]}" && -z "${readmove[4]}" ]]; then
-      dateskew=$($MDATE ${readmove[0]} ${readmove[2]} dummyflag)
+      dateskew=$(nice -n $NICELEVEL $MDATE ${readmove[0]} ${readmove[2]} dummyflag)
       if [ "$USEGNUDATE" != "YES" ]; then
-        arcdatedir=$(date -v-${dateskew}S +${readmove[1]})
+        arcdatedir=$(nice -n $NICELEVEL date -v-${dateskew}S +${readmove[1]})
       else
         arcday=$((${readmove[2]}/86400))
         archour=$(((${readmove[2]}%86400)/3600))
         arcmin=$((((${readmove[2]}%86400)%3600)/60))
         arcsec=$((((${readmove[2]}%86400)%3600)%60))
-       arcdatedir=$(date --date "-$arcday day -$archour hour -$arcmin min -$arcsec sec" +${readmove[1]})
+       arcdatedir=$(nice -n $NICELEVEL date --date "-$arcday day -$archour hour -$arcmin min -$arcsec sec" +${readmove[1]})
       fi
       if [[ "$TESTRUN" == "YES" ]]; then
         echo "MOVING ${readmove[0]} to ${SITEDIR}/${arcdatedir}"
       else
         destdir=$(echo ${SITEDIR}/${arcdatedir} | tr -s '/' | tr -d '\*')
-        echo "$(date "+%a %b %e %T %Y") PSXCARCH: {$(echo /${readmove[0]} | sed "s|$GLROOT||" | tr -s '/' | sed "s|/$||")} {$(echo /$destdir/$(basename ${readmove[0]}) | sed "s|$GLROOT||" | tr -s '/' | sed "s|/$||")} {${readmove[3]}}" >> $GLLOG
-        mkdir -m0777 -p $destdir
-        mv -fRp ${readmove[0]} $destdir/
+        echo "$(nice -n $NICELEVEL date "+%a %b %e %T %Y") PSXCARCH: {$(echo /${readmove[0]} | sed "s|$GLROOT||" | tr -s '/' | sed "s|/$||")} {$(echo /$destdir/$(basename ${readmove[0]}) | sed "s|$GLROOT||" | tr -s '/' | sed "s|/$||")} {${readmove[3]}}" >> $GLLOG
+        nice -n $NICELEVEL mkdir -m0777 -p $destdir
+        nice -n $NICELEVEL mv -fRp ${readmove[0]} $destdir/
         if [[ $(ls -1 $(dirname ${readmove[0]})) -eq 0 ]]; then
-          rmdir $(dirname ${readmove[0]})
+          nice -n $NICELEVEL rmdir $(dirname ${readmove[0]})
         fi
-        $GLUPDATE -r $glconf $destdir/$(basename ${readmove[0]})
+        nice -n $NICELEVEL $GLUPDATE -r $glconf $destdir/$(basename ${readmove[0]})
       fi
     fi
   done < $TEMPFILE3
 fi
 if [[ "$TESTRUN" == "YES" ]]; then
-  echo -e "\n$(date "+%a %b %e %T %Y") PSXC-FREE v${version} completed."
+  echo -e "\n$(nice -n $NICELEVEL date "+%a %b %e %T %Y") PSXC-FREE v${version} completed."
 else
-  $OLDDIRCLEAN -r $glconf >/dev/null 2>&1
+  nice -n $NICELEVEL $OLDDIRCLEAN -r $glconf >/dev/null 2>&1
   :> $TEMPFILE1
   :> $TEMPFILE2
   :> $TEMPFILE3
 fi
+rm $TEMPDIR/psxc-free.pid
 exit 0
 
