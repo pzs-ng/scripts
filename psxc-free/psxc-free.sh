@@ -77,7 +77,9 @@ freeupspace()
         if [[ "$TESTRUN" != "YES" ]]; then
           echo "$(date "+%a %b %e %T %Y") PSXCFREE: {$(echo /$1 | sed "s|$GLROOT||" | tr -s '/' | sed "s|/$||")} {$2}" >> $GLLOG
           rm -fR $delfile
-          rmdir $(dirname $delfile)
+          if [[ $(ls -1 $(dirname $delfile)) -eq 0 ]]; then
+            rmdir $(dirname $delfile)
+          fi
         else
           echo "DEVICE #$devnum $devicename: REMOVING $1 - FREEING $((${2}/1024))MB"
         fi
@@ -190,8 +192,8 @@ readglconf()
 create_today()
 {
   for modname in ${dirs[$devnum]}; do
-    dirname=$(echo $modname | cut -d ':' -f 1 | cut -d '|' -f 1)
-    symname=$(echo $modname | cut -d ':' -f 1 | grep '|' | cut -d '|' -f 2)
+    dirname=$(echo $modname | cut -d ':' -f 1 | cut -d '|' -f 1 | tr -d '\*')
+    symname=$(echo $modname | cut -d ':' -f 1 | grep '|' | cut -d '|' -f 2 | tr -d '\*')
     if [[ "$CREATEDATE" == "YES" ]]; then
       if [[ ! -z "$(echo "$dirname" | grep "%")" ]]; then
         if [[ ! -e $SITEDIR/$(date +$dirname) ]]; then
@@ -401,7 +403,7 @@ runfree()
 ######## Main part ########
 
 # VERSION
-version=0.8
+version=0.9
 
 # Find and read psxc-free.conf
 readconf
@@ -456,9 +458,9 @@ while [ "$devicename" ]; do
 
   # availible space is below minimum allowed
   for modname in ${dirs[$devnum]}; do
-    if [[ -z "$(echo $modname | grep ':' | cut -d ':' -f 2)" && -z "$(echo $modname | cut -d ':' -f 1 | cut -d '|' -f 1 | tr -cd '%')" ]]; then
-      continue
-    fi
+#    if [[ -z "$(echo $modname | grep ':' | cut -d ':' -f 2)" && -z "$(echo $modname | cut -d ':' -f 1 | cut -d '|' -f 1 | tr -cd '%')" ]]; then
+#      continue
+#    fi
     let secnum=secnum+1
     section_space[$secnum]=0
     calc_secfiles[$secnum]=0
@@ -556,11 +558,13 @@ if [[ -s $TEMPFILE3 ]]; then
       if [[ "$TESTRUN" == "YES" ]]; then
         echo "MOVING ${readmove[0]} to ${SITEDIR}/${arcdatedir}"
       else
-        destdir=$(echo ${SITEDIR}/${arcdatedir} | tr -s '/')
+        destdir=$(echo ${SITEDIR}/${arcdatedir} | tr -s '/' | tr -d '\*')
         echo "$(date "+%a %b %e %T %Y") PSXCARCH: {$(echo /${readmove[0]} | sed "s|$GLROOT||" | tr -s '/' | sed "s|/$||")} {$(echo /$destdir/$(basename ${readmove[0]}) | sed "s|$GLROOT||" | tr -s '/' | sed "s|/$||")} {${readmove[3]}}" >> $GLLOG
         mkdir -m0777 -p $destdir
         mv -fRp ${readmove[0]} $destdir/
-        rmdir $(dirname ${readmove[0]})
+        if [[ $(ls -1 $(dirname ${readmove[0]})) -eq 0 ]]; then
+          rmdir $(dirname ${readmove[0]})
+        fi
         $GLUPDATE -r $glconf $destdir/$(basename ${readmove[0]})
       fi
     fi
