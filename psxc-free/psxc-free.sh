@@ -406,7 +406,7 @@ runfree()
 ######## Main part ########
 
 # VERSION
-version=0.92
+version=0.93
 
 # Find and read psxc-free.conf
 readconf
@@ -420,13 +420,21 @@ DELFIRSTTIME=${DELFIRSTTIME:-"20"}
 TESTRUN=${TESTRUN:-"YES"}
 
 # check if already running
-if [[ -e $TEMPDIR/psxc-free.pid ]]; then
-  if [[ $(nice -n $NICELEVEL ps | nice -n $NICELEVEL grep ^$(cat $TEMPDIR/psxc-free.pid)) ]]; then
+#if [[ $(mkdir $TEMPDIR/psxc-free.pid >/dev/null 2>&1 | echo $?) -ne 0 ]]; then
+while [ 1 ]; do
+  mkdir $TEMPDIR/psxc-free.pid && break
+  echo "Seems another instance is already running ..."
+  sleep 1
+  if [[ -e $TEMPDIR/psxc-free.pid/pid && -s $TEMPDIR/psxc-free.pid/pid ]]; then
+   if [[ $(nice -n $NICELEVEL ps | nice -n $NICELEVEL grep ^$(cat $TEMPDIR/psxc-free.pid/pid)) ]]; then
     echo "Already running another version of $(basename $0) - exiting."
     exit 1
+    fi
   fi
-fi
-echo $$ > $TEMPDIR/psxc-free.pid
+done
+#fi
+
+echo $$ > $TEMPDIR/psxc-free.pid/pid
 
 devnum=1
 eval devicename=\$DEVICENAME_$devnum
@@ -594,6 +602,7 @@ else
   :> $TEMPFILE2
   :> $TEMPFILE3
 fi
-rm $TEMPDIR/psxc-free.pid
+rm $TEMPDIR/psxc-free.pid/pid
+rmdir $TEMPDIR/psxc-free.pid
 exit 0
 
