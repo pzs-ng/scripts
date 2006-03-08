@@ -101,11 +101,14 @@ freeupspace()
 initialize_devvars()
 {
   eval minfree[$devnum]=\$MINFREE_$devnum
+  minfree[$devnum]=${minfree[$devnum]:-"9000"}
   minfree[$devnum]=$((${minfree[$devnum]}*1024))
   eval setfree[$devnum]=\$SETFREE_$devnum
+  setfree[$devnum]=${setfree[$devnum]:-"10000"}
   setfree[$devnum]=$((${setfree[$devnum]}*1024))
   eval dirs[$devnum]=\$DIRS_$devnum
   eval daysback[$devnum]=\$DAYSBACK_$devnum
+  daysback[$devnum]=${daysback[$devnum]:-"120"}
   excludes=$(echo "$EXCLUDES" | tr ' ' '|')
   delfirst=$(echo "$DELFIRST" | tr ' ' '|')
   device_archive[$devnum]=${device_archive[$devnum]:-"NO"}
@@ -403,13 +406,18 @@ runfree()
 ######## Main part ########
 
 # VERSION
-version=0.91
+version=0.92
 
 # Find and read psxc-free.conf
 readconf
 
 # Find location of glftpd.conf
 readglconf
+
+#adding some defaults
+NICELEVEL=${NICELEVEL:-"20"}
+DELFIRSTTIME=${DELFIRSTTIME:-"20"}
+TESTRUN=${TESTRUN:-"YES"}
 
 # check if already running
 if [[ -e $TEMPDIR/psxc-free.pid ]]; then
@@ -498,7 +506,6 @@ done
 sort $TEMPFILE1 >$TEMPFILE2
 
 # first run in archive mode - find out what is to be moved, not removed
-  echo
   secnum=0
   devnum=1
   eval devicename=\$DEVICENAME_$devnum
