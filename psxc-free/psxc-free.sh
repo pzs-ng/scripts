@@ -77,7 +77,7 @@ freeupspace()
         if [[ "$TESTRUN" != "YES" ]]; then
           echo "$(nice -n $NICELEVEL date "+%a %b %e %T %Y") PSXCFREE: {$(echo /$1 | sed "s|$GLROOT||" | tr -s '/' | sed "s|/$||")} {$2}" >> $GLLOG
           nice -n $NICELEVEL rm -fR $delfile
-          if [[ $(ls -1 $(dirname $delfile)) -eq 0 ]]; then
+          if [[ $(ls -1 $(dirname $delfile) | wc -l) -eq 0 ]]; then
             nice -n $NICELEVEL rmdir $(dirname $delfile)
           fi
         else
@@ -350,7 +350,7 @@ makefree()
   while read -a readline; do
     if [[ ${datelimit_sec[$secnum]} -gt 0 && ${datelimit_sec[$secnum]} -lt ${readline[0]} ]]; then
         if [[ "$TESTRUN" == "YES" ]]; then
-          echo -e "DEVICE #$devnum $devicename: SECTION $modname: SECTIONSPACE ACHIEVED BY DATE - CONTINUING TO NEXT.\n"
+          echo -e "DEVICE #$devnum $devicename: SECTION $modname: SECTIONSPACE ACHIEVED - CONTINUING TO NEXT.\n"
         fi
       break
     fi
@@ -358,16 +358,22 @@ makefree()
       if [[ "${section_statsec[$secnum]}" != "YES" && "${section_archive[$secnum]}" != "YES" ]]; then
         break
       fi
-      if [[ ${freespace[$devnum]} -gt ${setfree[$devnum]} && "${section_statsec[$secnum]}" != "YES" ]]; then
-        if [[ "$TESTRUN" == "YES" ]]; then
-          echo -e "DEVICE #$devnum $devicename: SECTION $modname: SECTIONSPACE ACHIEVED ($((${section_space[$secnum]}/1024))MB) - CONTINUING TO NEXT.\n"
-        fi
-        break
-      fi
-      if [[ ${freespace[$devnum]} -gt ${setfree[$devnum]} && "${section_statsec[$secnum]}" == "YES" ]]; then
-        if [[ "${section_type[$secnum]}" == "SIZE" && ${section_space[$secnum]} -ne 0 && ${section_space[$secnum]} -le ${dsize[$secnum]} ]]; then
+      if [[ "${section_statsec[$secnum]}" != "YES" ]]; then
+        if [[ "${section_type[$secnum]}" == "SIZE" && ((${section_space[$secnum]} -ne 0 && ${section_space[$secnum]} -le ${dsize[$secnum]}) || ${freespace[$devnum]} -gt ${setfree[$devnum]}) ]]; then
           if [[ "$TESTRUN" == "YES" ]]; then
             echo -e "DEVICE #$devnum $devicename: SECTION $modname: SECTIONSPACE ACHIEVED ($((${section_space[$secnum]}/1024))MB) - CONTINUING TO NEXT.\n"
+          fi
+          break
+        elif [[ "${section_type[$secnum]}" == "FILES" && (${calc_secfiles[$secnum]} -le ${dfiles[$secnum]} || ${freespace[$devnum]} -gt ${setfree[$devnum]}) ]]; then
+          if [[ "$TESTRUN" == "YES" ]]; then
+            echo -e "DEVICE #$devnum $devicename: SECTION $modname: SECTIONSPACE ACHIEVED ($((${section_space[$secnum]}/1024))MB) - CONTINUING TO NEXT.\n"
+          fi
+          break
+        fi
+      elif [[ ${freespace[$devnum]} -gt ${setfree[$devnum]} && "${section_statsec[$secnum]}" == "YES" ]]; then
+        if [[ "${section_type[$secnum]}" == "SIZE" && ${section_space[$secnum]} -ne 0 && ${section_space[$secnum]} -le ${dsize[$secnum]} ]]; then
+          if [[ "$TESTRUN" == "YES" ]]; then
+            echo -e "DEVICE #$devnum $devicename: SECTION $modname: SECTIONSPACE ACHIEVED ($((${section_space[$secnum]}/1024))MB < $((${dsize[$secnum]}/1024))MB) - CONTINUING TO NEXT.\n"
           fi
           break
         elif [[ "${section_type[$secnum]}" == "FILES" && ${calc_secfiles[$secnum]} -le ${dfiles[$secnum]} ]]; then
@@ -385,16 +391,16 @@ makefree()
 runfree()
 {
   for modname in ${dirs[$devnum]}; do
-    if [[ -z "$(echo $modname | nice -n $NICELEVEL grep ':' | cut -d ':' -f 2)" && -z "$(echo $modname | nice -n $NICELEVEL grep ':' | cut -d ':' -f 1 | cut -d '|' -f 1 | tr -cd '%')" ]]; then
-      continue
-    fi
+#    if [[ -z "$(echo $modname | nice -n $NICELEVEL grep ':' | cut -d ':' -f 2)" && -z "$(echo $modname | nice -n $NICELEVEL grep ':' | cut -d ':' -f 1 | cut -d '|' -f 1 | tr -cd '%')" ]]; then
+#      continue
+#    fi
     let secnum=secnum+1
-    if [[ "${section_statsec[$secnum]}" != "YES" && "${section_archive[$secnum]}" != "YES" ]]; then
+    if [[ "${section_statsec[$secnum]}" != "YES" ]]; then # && "${section_archive[$secnum]}" != "YES" ]]; then
       if [[ ${freespace[$devnum]} -gt ${setfree[$devnum]} ]]; then
         continue
-      elif [[ "${section_type[$secnum]}" == "SIZE" && ${section_space[$secnum]} -le ${dsize[$secnum]} ]]; then
+      elif [[ "${section_type[$secnum]}" == "SIZE" && (${section_space[$secnum]} -le ${dsize[$secnum]} || ${freespace[$devnum]} -gt ${setfree[$devnum]}) ]]; then
         continue
-      elif [[ "${section_type[$secnum]}" == "FILES" && ${calc_secfiles[$secnum]} -le ${dfiles[$secnum]} ]]; then
+      elif [[ "${section_type[$secnum]}" == "FILES" && (${calc_secfiles[$secnum]} -le ${dfiles[$secnum]} || ${freespace[$devnum]} -gt ${setfree[$devnum]}) ]]; then
         continue
       fi
     fi
@@ -406,7 +412,7 @@ runfree()
 ######## Main part ########
 
 # VERSION
-version=0.93
+version=0.94
 
 # Find and read psxc-free.conf
 readconf
@@ -420,20 +426,20 @@ DELFIRSTTIME=${DELFIRSTTIME:-"20"}
 TESTRUN=${TESTRUN:-"YES"}
 
 # check if already running
-#if [[ $(mkdir $TEMPDIR/psxc-free.pid >/dev/null 2>&1 | echo $?) -ne 0 ]]; then
 while [ 1 ]; do
-  mkdir $TEMPDIR/psxc-free.pid && break
+  mkdir $TEMPDIR/psxc-free.pid 2>/dev/null && break
   echo "Seems another instance is already running ..."
   sleep 1
   if [[ -e $TEMPDIR/psxc-free.pid/pid && -s $TEMPDIR/psxc-free.pid/pid ]]; then
-   if [[ $(nice -n $NICELEVEL ps | nice -n $NICELEVEL grep ^$(cat $TEMPDIR/psxc-free.pid/pid)) ]]; then
-    echo "Already running another version of $(basename $0) - exiting."
-    exit 1
+    if [[ $(nice -n $NICELEVEL ps | nice -n $NICELEVEL grep ^$(cat $TEMPDIR/psxc-free.pid/pid)) ]]; then
+      echo "Already running another version of $(basename $0) - exiting."
+      exit 1
     fi
+    break
+  else
+   break
   fi
 done
-#fi
-
 echo $$ > $TEMPDIR/psxc-free.pid/pid
 
 devnum=1
@@ -566,6 +572,8 @@ sort $TEMPFILE1 >$TEMPFILE2
 if [[ -s $TEMPFILE3 ]]; then
   if [[ "$TESTRUN" == "YES" ]]; then
     echo "MOVING DIRS PREVIOUSLY MARKED FOR ARCHIVING"
+  else
+    :> $TEMPFILE1
   fi
   while read -a readmove; do
     if [[ ! -z "${readmove[0]}" && -z "${readmove[4]}" ]]; then
@@ -585,19 +593,24 @@ if [[ -s $TEMPFILE3 ]]; then
         destdir=$(echo ${SITEDIR}/${arcdatedir} | tr -s '/' | tr -d '\*')
         echo "$(nice -n $NICELEVEL date "+%a %b %e %T %Y") PSXCARCH: {$(echo /${readmove[0]} | sed "s|$GLROOT||" | tr -s '/' | sed "s|/$||")} {$(echo /$destdir/$(basename ${readmove[0]}) | sed "s|$GLROOT||" | tr -s '/' | sed "s|/$||")} {${readmove[3]}}" >> $GLLOG
         nice -n $NICELEVEL mkdir -m0777 -p $destdir
-        nice -n $NICELEVEL mv -fRp ${readmove[0]} $destdir/
-        if [[ $(ls -1 $(dirname ${readmove[0]})) -eq 0 ]]; then
+        nice -n $NICELEVEL mv -f ${readmove[0]} $destdir/
+        if [[ $(ls -1 $(dirname ${readmove[0]}) | wc -l) -eq 0 ]]; then
           nice -n $NICELEVEL rmdir $(dirname ${readmove[0]})
         fi
-        nice -n $NICELEVEL $GLUPDATE -r $glconf $destdir/$(basename ${readmove[0]})
+        echo $destdir/ >> $TEMPFILE1
       fi
     fi
   done < $TEMPFILE3
+  if [[ "$TESTRUN" != "YES" ]]; then
+    for ddir in $(sort $TEMPFILE1 | uniq); do
+      nice -n $NICELEVEL $GLUPDATE -r $glconf $ddir
+    done
+  fi
 fi
 if [[ "$TESTRUN" == "YES" ]]; then
   echo -e "\n$(nice -n $NICELEVEL date "+%a %b %e %T %Y") PSXC-FREE v${version} completed."
 else
-  nice -n $NICELEVEL $OLDDIRCLEAN -r $glconf >/dev/null 2>&1
+  nice -n $NICELEVEL $OLDDIRCLEAN -P -r $glconf >/dev/null 2>&1
   :> $TEMPFILE1
   :> $TEMPFILE2
   :> $TEMPFILE3

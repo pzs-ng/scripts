@@ -94,9 +94,9 @@ DEVICENAME_#      - This is the device we check for freespace. Usually it is
 
                     If you wish to have some sort of quota setup, add a colon
                     and a size after the dir, like APPS/*:60G. 'M' and 'm'
-                    signify megabytes, 'G' and 'g' is gigabytes, 'G' and 'g'
-                    is gigabytes, 'P' and '%' is percentage of total diskspace,
-                    'F' and 'f' is number of files allowed in section.
+                    signify megabytes, 'G' and 'g' is gigabytes, 'P' and '%' is
+                    percentage of total diskspace, 'F' and 'f' is number of
+                    files allowed in section.
                     Then there are 'D' and 'd' for days, 'W' and 'w' for weeks,
                     and 'L' and 'l' for months (the letter 'M' was busy ;P) -
                     these signify the entire day/week/month - 2W == this week
@@ -158,7 +158,7 @@ path to dir deleted/moved, %pf-dest is the new path of the moved dir, including
 the actual name of the dir, and %size is size of the deleted/moved dir in KB.
 
 
-A NOTE ABOUT ARCHIVING
+NOTES ABOUT ARCHIVING
 ----------------------
 Archiving dirs is a somewhat difficult task, really. If you archive on your
 site, put the device with the archive(s) LAST. It won't break anything if you
@@ -166,6 +166,10 @@ don't, or have archive devices spread all over, but the general rule-of-thumb
 is to place the archive devices (destination devices that is) last.
 The devices you wish to move FROM should be placed first. Again, more a
 general rule-of-thumb than an absolute.
+There is no such thing as a dynamic spacelimit if you archive to the same
+device - since the amount free on the device stay the same, the dynamic
+setting is in effect absolute. You can bypass this by adding a bogus device-
+number at the end - like 0.
 
 
 FINAL NOTE
