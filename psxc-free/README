@@ -167,7 +167,7 @@ is to place the archive devices (destination devices that is) last.
 The devices you wish to move FROM should be placed first. Again, more a
 general rule-of-thumb than an absolute.
 There is no such thing as a dynamic spacelimit if you archive to the same
-device - since the amount free on the device stay the same, the dynamic
+device - since the amount freespace on the device stay the same, the dynamic
 setting is in effect absolute. You can bypass this by adding a bogus device-
 number at the end - like 0.
 
@@ -176,7 +176,10 @@ FINAL NOTE
 ----------
 That's about it. Even though this is the very first release of the script, you
 shouldn't expect a lot more features in future versions. The goal when i made
-this script was to have an easy config.
+this script was to make something with an easy config, yet usable in (almost)
+any environment.
+Stuff that still needs to be done is in the TODO file.
+
 Comments/praise/request can be directed to me on irc. My nick is psxc.
 
 

@@ -1,0 +1,21 @@
+This is my list of stuff to do. If you have an idea that should be placed in
+in this file, please mail me @ psxc@psxc.com
+
+1. Improve the dynamic section handling - currently it handles one section
+   completely before moving to the next one. It should instead match file
+   against section.
+
+2. Add support to execute a script after removing/moving a dir. good for mp3-
+   symlink handling.
+
+3. Improve the archiving - if someone set up some weird archiving it may happen
+   that the free space on the device is not enough for the stuff being moved.
+   Checks should be added and actions performed to remedy this.
+
+
+
+
+
+
+-- EOF
+

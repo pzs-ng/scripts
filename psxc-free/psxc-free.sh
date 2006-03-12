@@ -1,5 +1,6 @@
 #!/bin/bash
-# This must be set correctly.
+# Path to psxc-free.conf - usually ignored. Only need to edit if you
+# get specific instructions to do so.
 CONF=/glftpd/etc/psxc-free.conf
 
 ## code part below
@@ -412,7 +413,7 @@ runfree()
 ######## Main part ########
 
 # VERSION
-version=0.94
+version=1.00
 
 # Find and read psxc-free.conf
 readconf
