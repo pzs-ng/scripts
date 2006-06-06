@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# psxc-unpack.sh v0.3 (c) psxc//2006
+# psxc-unpack.sh v0.4 (c) psxc//2006
 ####################################
 #
 # This simple little thingy extracts files in a dir and removes the
@@ -17,15 +17,17 @@
 #
 # installation:
 # 1. copy psxc-unpack.sh to /glftpd/bin
-# 2. make your zipscript run this script after release is complete.
+# 2. make sure the /glftpd/tmp dir exists, and is world read/writable:
+#      mkdir -p777 /glftpd/tmp
+# 3. make your zipscript run this script after release is complete.
 #    with pzs-ng, add
 #      #define complete_script "/bin/psxc-unpack.sh"
 #    to zsconfig.h
-# 3. add a crontab entry to execute /glftpd/bin/psxc-unpack.sh at certain intervals
+# 4. add a crontab entry to execute /glftpd/bin/psxc-unpack.sh at certain intervals
 #      */5 * * * * /glftpd/bin/psxc-unpack.sh
 #
 # you can also use this as a site command - fyi
-#   site_cmd UNPACK CMD /bin/psxc-unpack.sh
+#   site_cmd UNPACK EXEC /bin/psxc-unpack.sh
 #   custom-unpack 1
 
 # neeed bins:
@@ -49,22 +51,25 @@ SITEDIR=/site
 LOGFILE=/tmp/psxc-unpack.log
 
 # in what dirs should this script be executed?
-DIRS="/site/DVDR /site/XVID"
+DIRS="/site/XVID /site/DVDR"
 
 # the unrar command. remove the 'echo' in front to activate
-UNRAR="echo nice -n 20 unrar e"
+# also check the man page for unrar - you may want to use
+# 'unrar x' instead of 'unrar e'.
+UNRAR="echo nice -n 20 unrar e -p- -c- -cfg- --"
 
 # rm/delete command. remove the 'echo' in front to activate
 RM="echo rm"
 
 # rar filetypes. should be fine as is.
-FILETYPES=".[Rr0-9][aA0-9][rR0-9]"
+FILETYPES="\.[Rr0-9][aA0-9][rR0-9]$"
 
 # set this to '1' to make the script run immediatly after release is complete
 RUN_NOW=0
 
 # put here a word to use to make the script unpack immediatly - only
 # handy if you add this script as a site command. Not case sensitive.
+# The site command will then be 'site unpack now' to extract immediatly.
 MAGICWORD="now"
 
 ################################################################
@@ -102,25 +107,29 @@ while [ 1 ]; do
     mv $RDIR/$LOGFILE.tmp $RDIR/$LOGFILE
     continue
   }
-  for FNAME in $(ls $RDIR/$DNAME); do
+  ls -1 $RDIR/$DNAME >$RDIR/$LOGFILE.tmp
+  while read -a FNAME; do
     for FTYPE in $FILETYPES; do
       [[ ! -z "$(echo $FNAME | grep $FTYPE)" ]] && EXTRACTNAME=$FNAME
     done
     [[ ! -z "$EXTRACTNAME" ]] && break
-  done
+  done < $RDIR/$LOGFILE.tmp
+  rm $RDIR/$LOGFILE.tmp
   grep -v "$DNAME" $RDIR/$LOGFILE > $RDIR/$LOGFILE.tmp
   mv $RDIR/$LOGFILE.tmp $RDIR/$LOGFILE
   [[ ! -z "$EXTRACTNAME" ]] && {
     cd $RDIR/$DNAME
-    $UNRAR $EXTRACTNAME
+    $UNRAR "$EXTRACTNAME"
     [[ $? -eq 0 ]] && {
-      for FNAME in $(ls $RDIR/$DNAME); do
+      ls -1 $RDIR/$DNAME >$RDIR/$LOGFILE.tmp
+      while read -a FNAME; do
         for FTYPE in $FILETYPES; do
-          [[ ! -z "$(echo $FNAME | grep -e $FTYPE)" ]] && $RM $FNAME
+          [[ ! -z "$(echo $FNAME | grep -e $FTYPE)" && -e $FNAME ]] && $RM $FNAME
         done
-      done
+      done < $RDIR/$LOGFILE.tmp
+      rm $RDIR/$LOGFILE.tmp
     }
   }
 done
-$RM $RDIR/$LOGFILE.pid
+rm $RDIR/$LOGFILE.pid
 

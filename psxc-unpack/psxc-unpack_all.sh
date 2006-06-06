@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# psxc-unpack_all.sh v0.3 (c) psxc//2006
+# psxc-unpack_all.sh v0.4 (c) psxc//2006
 ########################################
 #
 # This here is an addon to psxc-unpack.sh.
@@ -20,13 +20,13 @@ GLROOT=/glftpd
 PATH=$GLROOT/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin:/usr/libexec
 
 # your *Complete* dir/file looks like...
-COMPLETE_DIR="*\[*\]*COMPLETE*\[*\]"
+COMPLETE_DIR="*\[*\]*[Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ee]*\[*\]"
 
 # nuked dir style
 NUKED_DIRS="\[NUKED\]*"
 
-# what dirs to search
-SEARCH_DIRS="/site/DIVX /site/DVDR"
+# what dirs to search - IMPORTANT!!!
+SEARCH_DIRS="/site/XVID /site/DVDR"
 
 # path to psxc-unpack.sh
 UNPACK=/bin/psxc-unpack.sh
@@ -49,11 +49,12 @@ init_dir=$(echo $SEARCH_DIRS | tr ' ' '\n' | head -n 1)
 RDIR=""
 [[ -d $GLROOT/$init_dir ]] && RDIR=$GLROOT
 for sdir in $SEARCH_DIRS; do
-  echo "scanning $sdir ...."
+  echo -e "\nscanning $sdir ...."
   for fdir in $RDIR/$sdir/*; do
-    find $fdir -name $COMPLETE_DIR >$LOGFILE.tmp
-    while read -a mdir; do
-      echo $(dirname $mdir) | tr -s '/' | grep -v $NUKED_DIRS >>$RDIR/$LOGFILE
+    find "$fdir" -name "$COMPLETE_DIR" >$LOGFILE.tmp
+    while read -a "mdir"; do
+      echo $(dirname "$mdir") | tr -s '/' | sed "s|$RDIR||" | grep -v "$NUKED_DIRS" >>$RDIR/$LOGFILE
+      echo "FOUND: $(dirname "$mdir" | tr -s '/' | grep -v "$NUKED_DIRS" | sed "s|$RDIR||" )"
     done < $LOGFILE.tmp
     rm $LOGFILE.tmp
   done
