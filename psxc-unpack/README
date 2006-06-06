@@ -1,0 +1,25 @@
+README for psxc-unpack and psxc-unpack_all
+==========================================
+
+These scripts were made by request. What they do is unrar files, keeping the
+dir structure. It should be "safe" - only the rar-files found initially will
+be removed after a successful unpacking - ie, if the unpacking fails, no files
+will be removed. Also, if there are rar files within a rar archive (like with
+subs) the new rar file(s) will not be removed.
+
+A testmode is on by default, meaning no files will be extracted, and no files
+will be removed. This to help you test before puting it "live".
+
+The main script (psxc-unpack.sh) will scan current dir, if the script is run
+chroot'ed (either as a site command or by a zipscript), and extract the dirs
+logged in a special logfile when not run chroot'ed, or run with a special
+"magic word" under chroot.
+
+The additional script, psxc-unpack_all.sh, will scan recursively certain dirs,
+adding dirs that has been complete to the logfile mentioned above.
+After all is done, it will start the unpack procedure (running the main script).
+
+Enjoy.
+
+//psxc(C)2006
+
