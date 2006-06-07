@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# psxc-unpack_all.sh v0.4 (c) psxc//2006
+# psxc-unpack_all.sh v0.5 (c) psxc//2006
 ########################################
 #
 # This here is an addon to psxc-unpack.sh.
 # It's purpose is to make it possible to scan and unpack recursively.
 # Should probably only be used as a shell script
 #
-# Needed bins: echo find tr grep 
+# Needed bins: echo find tr grep sed
 
 #####################################################
 # CONFIGURATION
@@ -48,15 +48,16 @@ MAGIC_WORD="now"
 init_dir=$(echo $SEARCH_DIRS | tr ' ' '\n' | head -n 1)
 RDIR=""
 [[ -d $GLROOT/$init_dir ]] && RDIR=$GLROOT
+[[ ! -e $RDIR/$LOGFILE ]] && :>$RDIR/$LOGFILE && chmod 666 $RDIR/$LOGFILE
 for sdir in $SEARCH_DIRS; do
   echo -e "\nscanning $sdir ...."
   for fdir in $RDIR/$sdir/*; do
-    find "$fdir" -name "$COMPLETE_DIR" >$LOGFILE.tmp
+    find "$fdir" -name "$COMPLETE_DIR" >$RDIR/$LOGFILE.tmp
     while read -a "mdir"; do
       echo $(dirname "$mdir") | tr -s '/' | sed "s|$RDIR||" | grep -v "$NUKED_DIRS" >>$RDIR/$LOGFILE
       echo "FOUND: $(dirname "$mdir" | tr -s '/' | grep -v "$NUKED_DIRS" | sed "s|$RDIR||" )"
-    done < $LOGFILE.tmp
-    rm $LOGFILE.tmp
+    done < $RDIR/$LOGFILE.tmp
+    rm $RDIR/$LOGFILE.tmp
   done
 done
 echo "done scanning."

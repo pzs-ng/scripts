@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# psxc-unpack.sh v0.4 (c) psxc//2006
+# psxc-unpack.sh v0.5 (c) psxc//2006
 ####################################
 #
 # This simple little thingy extracts files in a dir and removes the
@@ -18,7 +18,7 @@
 # installation:
 # 1. copy psxc-unpack.sh to /glftpd/bin
 # 2. make sure the /glftpd/tmp dir exists, and is world read/writable:
-#      mkdir -p777 /glftpd/tmp
+#      mkdir -p -m777 /glftpd/tmp
 # 3. make your zipscript run this script after release is complete.
 #    with pzs-ng, add
 #      #define complete_script "/bin/psxc-unpack.sh"
@@ -31,7 +31,7 @@
 #   custom-unpack 1
 
 # neeed bins:
-# unrar ps grep cat awk head ls echo mv tr (nice)
+# unrar ps grep cat awk head ls echo mv tr chmod (nice)
 
 #####################################################
 # CONFIGURATION
@@ -76,7 +76,9 @@ MAGICWORD="now"
 # CODE BELOW - PLEASE IGNORE
 ################################################################
 
-[[ ! -e $LOGFILE ]] && :>$LOGFILE
+init_dir=$(echo $DIRS | tr ' ' '\n' | head -n 1)
+[[ -d $GLROOT/$init_dir ]] && RDIR=$GLROOT
+[[ ! -e $RDIR/$LOGFILE ]] && :>$RDIR/$LOGFILE && chmod 666 $RDIR/$LOGFILE
 [[ ! -e $GLROOT/$LOGFILE && -e $SITEDIR ]] && {
   for DNAME in $DIRS; do
     [[ ! -z "$(echo $PWD | grep $DNAME)" ]] && {
@@ -88,8 +90,6 @@ MAGICWORD="now"
 }
 [[ "$(echo "$MAGICWORD" | tr 'A-Z' 'a-z')" == "$(echo "$1" | tr 'A-Z' 'a-z')" ]] && RUN_NOW=1
 [[ $RUN_NOW -ne 1 && ! -e $GLROOT/$LOGFILE && -e $SITEDIR ]] && exit 0
-RDIR=""
-[[ -e $GLROOT/$LOGFILE ]] && RDIR=$GLROOT
 [[ -z "$(cat $RDIR/$LOGFILE)" ]] && exit 0
 [[ -e $RDIR/$LOGFILE.pid ]] && {
   oldpid=$(cat $RDIR/$LOGFILE.pid)
@@ -124,12 +124,18 @@ while [ 1 ]; do
       ls -1 $RDIR/$DNAME >$RDIR/$LOGFILE.tmp
       while read -a FNAME; do
         for FTYPE in $FILETYPES; do
-          [[ ! -z "$(echo $FNAME | grep -e $FTYPE)" && -e $FNAME ]] && $RM $FNAME
+          [[ ! -z "$(echo $FNAME | grep -e $FTYPE)" && -e $FNAME ]] && $RM $FNAME && SNAME=$FNAME
         done
+      done < $RDIR/$LOGFILE.tmp
+      while read -a FNAME; do
+        [[ ! -z "$(echo $FNAME | grep -e "\.[Ss][Ff][Vv]$")" && -e $FNAME ]] && {
+          [[ ! -z "$(grep -r $SNAME $FNAME)" ]] && $RM $FNAME && break
+        }
       done < $RDIR/$LOGFILE.tmp
       rm $RDIR/$LOGFILE.tmp
     }
   }
 done
+rm $RDIR/$LOGFILE
 rm $RDIR/$LOGFILE.pid
 
