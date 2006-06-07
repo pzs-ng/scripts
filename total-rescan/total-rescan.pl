@@ -43,6 +43,10 @@
 #  the least i could do ;) 
 #  
 # changelog:
+#  from 1.4
+#  * now actually resorts if onlysort = 1 (problem with environment-variables made audiosort misbehave)
+#  ! outputs statistics on how many dirs were resorted, and on each dir sorted.
+#
 #  from 1.3
 #  ! now chmods the rmscript to 755.
 #  + $printeach setting, can be used to disable PASSED: and FAILED: for each rescan. (E.g. for big archives)
@@ -124,6 +128,7 @@ my $glroot = shift || '/glftpd';
 $glroot =~ s/(?<!\/)$/\//;
 
 $rmscript = '' if not defined($rmscript) or $onlysort;
+delete $ENV{'PWD'};
 
 if (!defined($path)) {
 	print STDERR "- Path to scan not defined, exiting.\n";
@@ -169,9 +174,9 @@ sub rescandir {
 		return 0;
 	}
 
-	my $retval;
+	my $retval = 1;
 	if ($onlysort) {
-		my $output = `$audiosort`;
+		`$audiosort`;
 	} else  {
 		my ($atime, $mtime);
 		if ($preservestamp) {
@@ -255,6 +260,7 @@ while (my $cdir = scalar glob $path) {
 
 			if (isscandir($tdir)) {
 				++$scanneddirs;
+				print "+ RESORTING: $tdir\n" if $onlysort and $printeach;
 				if (rescandir($tdir)) {
 					++$gooddirs;
 				} else {
@@ -272,7 +278,9 @@ if (!$scanneddirs) {
 	exit 1;
 }
 
-if (!$onlysort) {
+if ($onlysort) {
+	print "+ Total resorted: $scanneddirs\n";
+} else {
 	print "+ Good dirs: $gooddirs\n";
 	print "!  Bad dirs: $baddirs\n";
 	print "+     Total: $scanneddirs\n";
