@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# psxc-unpack_all.sh v0.5 (c) psxc//2006
+# psxc-unpack_all.sh v0.6 (c) psxc//2006
 ########################################
 #
 # This here is an addon to psxc-unpack.sh.
@@ -19,8 +19,8 @@ GLROOT=/glftpd
 # your PATH variable
 PATH=$GLROOT/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin:/usr/libexec
 
-# your *Complete* dir/file looks like...
-COMPLETE_DIR="*\[*\]*[Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ee]*\[*\]"
+# your *Complete* dir/file looks like... 
+COMPLETE_DIR="*\[*\]*[Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ee]*\[*\]*"
 
 # nuked dir style
 NUKED_DIRS="\[NUKED\]*"

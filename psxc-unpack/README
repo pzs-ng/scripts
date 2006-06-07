@@ -8,7 +8,7 @@ will be removed. Also, if there are rar files within a rar archive (like with
 subs) the new rar file(s) will not be removed.
 
 A testmode is on by default, meaning no files will be extracted, and no files
-will be removed. This to help you test before puting it "live".
+will be removed. This to help you test before putting it "live".
 
 The main script (psxc-unpack.sh) will scan current dir, if the script is run
 chroot'ed (either as a site command or by a zipscript), and extract the dirs
@@ -18,6 +18,11 @@ logged in a special logfile when not run chroot'ed, or run with a special
 The additional script, psxc-unpack_all.sh, will scan recursively certain dirs,
 adding dirs that has been complete to the logfile mentioned above.
 After all is done, it will start the unpack procedure (running the main script).
+
+If it encounters rar-files in subdirs (subs/ , cd1/ , dvd3/ etc), it will
+extract the file(s) to parent dir. Also, if the subdir is empty (not counting
+the COMPLETE dir/file and any files starting with a dot, like .message), it
+will try to delete the entire subdir. This is, ofcourse, optional.
 
 Enjoy.
 

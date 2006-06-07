@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# psxc-unpack.sh v0.5 (c) psxc//2006
+# psxc-unpack.sh v0.6 (c) psxc//2006
 ####################################
 #
 # This simple little thingy extracts files in a dir and removes the
@@ -61,8 +61,18 @@ UNRAR="echo nice -n 20 unrar e -p- -c- -cfg- --"
 # rm/delete command. remove the 'echo' in front to activate
 RM="echo rm"
 
+# rmdir command - used to delete empty subdirs. remove the 'echo' in front
+# to activate. WARNING! Be careful!
+RMDIR="echo rm -fR"
+
 # rar filetypes. should be fine as is.
 FILETYPES="\.[Rr0-9][aA0-9][rR0-9]$"
+
+# subdirs. should be fine as is.
+SUBDIRS="^[Cc][Dd][0-9a-zA-Z]$ ^[Dd][Vv][Dd][0-9a-zA-Z]$ ^[Ss][Uu][Bb][Ss]*$"
+
+# how your completedirs look like. (This is regexp style, so keep the .*)
+COMPLETEDIR=".*\[*\].*[Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ee].*\[*\].*"
 
 # set this to '1' to make the script run immediatly after release is complete
 RUN_NOW=0
@@ -103,7 +113,7 @@ while [ 1 ]; do
   EXTRACTNAME=""
   DNAME=$(head -n 1 $RDIR/$LOGFILE)
   [[ ! -d $RDIR/$DNAME ]] && {
-    grep -v "$DNAME" $RDIR/$LOGFILE > $RDIR/$LOGFILE.tmp
+    grep -v "$DNAME$" $RDIR/$LOGFILE > $RDIR/$LOGFILE.tmp
     mv $RDIR/$LOGFILE.tmp $RDIR/$LOGFILE
     continue
   }
@@ -119,7 +129,11 @@ while [ 1 ]; do
   mv $RDIR/$LOGFILE.tmp $RDIR/$LOGFILE
   [[ ! -z "$EXTRACTNAME" ]] && {
     cd $RDIR/$DNAME
-    $UNRAR "$EXTRACTNAME"
+    SMATCH=0
+    for SUBDIR in $SUBDIRS; do
+      [[ ! -z "$(basename $DNAME | grep -e "$SUBDIR")" ]] && SMATCH=1 && break
+    done
+    [[ $SMATCH -eq 1 ]] && $UNRAR "$EXTRACTNAME" ../ || $UNRAR "$EXTRACTNAME"
     [[ $? -eq 0 ]] && {
       ls -1 $RDIR/$DNAME >$RDIR/$LOGFILE.tmp
       while read -a FNAME; do
@@ -133,6 +147,7 @@ while [ 1 ]; do
         }
       done < $RDIR/$LOGFILE.tmp
       rm $RDIR/$LOGFILE.tmp
+      [[ $(ls -1 $RDIR/$DNAME | grep -v "^\ " | grep -v "^\." | grep -v "$COMPLETEDIR" | wc -l) -eq 0 ]] && $RMDIR $RDIR/$DNAME
     }
   }
 done
