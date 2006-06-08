@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# psxc-unpack.sh v0.6 (c) psxc//2006
+# psxc-unpack.sh v0.7 (c) psxc//2006
 ####################################
 #
 # This simple little thingy extracts files in a dir and removes the
@@ -82,11 +82,16 @@ RUN_NOW=0
 # The site command will then be 'site unpack now' to extract immediatly.
 MAGICWORD="now"
 
+# If you wish to remove write-rights of the dirs after extraction, set this
+# variable to 1.
+CHMOD_DIRS=1
+
 ################################################################
 # CODE BELOW - PLEASE IGNORE
 ################################################################
 
 init_dir=$(echo $DIRS | tr ' ' '\n' | head -n 1)
+RDIR=""
 [[ -d $GLROOT/$init_dir ]] && RDIR=$GLROOT
 [[ ! -e $RDIR/$LOGFILE ]] && :>$RDIR/$LOGFILE && chmod 666 $RDIR/$LOGFILE
 [[ ! -e $GLROOT/$LOGFILE && -e $SITEDIR ]] && {
@@ -96,7 +101,7 @@ init_dir=$(echo $DIRS | tr ' ' '\n' | head -n 1)
        break
     }
   done
-  [[ $found -eq 1 ]] && echo "$PWD" >>$LOGFILE
+  [[ $found -eq 1 ]] && echo "$PWD" >>$RDIR/$LOGFILE
 }
 [[ "$(echo "$MAGICWORD" | tr 'A-Z' 'a-z')" == "$(echo "$1" | tr 'A-Z' 'a-z')" ]] && RUN_NOW=1
 [[ $RUN_NOW -ne 1 && ! -e $GLROOT/$LOGFILE && -e $SITEDIR ]] && exit 0
@@ -108,49 +113,68 @@ init_dir=$(echo $DIRS | tr ' ' '\n' | head -n 1)
   done
 }
 echo $$ >$RDIR/$LOGFILE.pid
+:>$RDIR/$LOGFILE.complete
 while [ 1 ]; do
   [[ -z "$(cat $RDIR/$LOGFILE)" ]] && break
-  EXTRACTNAME=""
   DNAME=$(head -n 1 $RDIR/$LOGFILE)
   [[ ! -d $RDIR/$DNAME ]] && {
     grep -v "$DNAME$" $RDIR/$LOGFILE > $RDIR/$LOGFILE.tmp
     mv $RDIR/$LOGFILE.tmp $RDIR/$LOGFILE
     continue
   }
-  ls -1 $RDIR/$DNAME >$RDIR/$LOGFILE.tmp
-  while read -a FNAME; do
-    for FTYPE in $FILETYPES; do
-      [[ ! -z "$(echo $FNAME | grep $FTYPE)" ]] && EXTRACTNAME=$FNAME
-    done
-    [[ ! -z "$EXTRACTNAME" ]] && break
-  done < $RDIR/$LOGFILE.tmp
-  rm $RDIR/$LOGFILE.tmp
-  grep -v "$DNAME" $RDIR/$LOGFILE > $RDIR/$LOGFILE.tmp
-  mv $RDIR/$LOGFILE.tmp $RDIR/$LOGFILE
-  [[ ! -z "$EXTRACTNAME" ]] && {
+  while [ 2 ]; do
+    EXTRACTNAME=""
+    [[ ! -e $RDIR/$DNAME ]] && break
+    ls -1 $RDIR/$DNAME >$RDIR/$LOGFILE.tmp
     cd $RDIR/$DNAME
+    while read -a FNAME; do
+      for FTYPE in $FILETYPES; do
+        [[ ! -z "$(echo $FNAME | grep $FTYPE)" ]] && EXTRACTNAME=$FNAME
+      done
+      [[ ! -z "$EXTRACTNAME" ]] && {
+        [[ -e "$(unrar lb $EXTRACTNAME | head -n 1)" ]] && {
+          $RM $EXTRACTNAME && EXTRACTNAME=""
+        } || { break
+        }
+      }
+    done < $RDIR/$LOGFILE.tmp
+    rm $RDIR/$LOGFILE.tmp
+    grep -v "$DNAME$" $RDIR/$LOGFILE > $RDIR/$LOGFILE.tmp
+    mv $RDIR/$LOGFILE.tmp $RDIR/$LOGFILE
+    [[ -z "$EXTRACTNAME" ]] && break
     SMATCH=0
     for SUBDIR in $SUBDIRS; do
       [[ ! -z "$(basename $DNAME | grep -e "$SUBDIR")" ]] && SMATCH=1 && break
     done
     [[ $SMATCH -eq 1 ]] && $UNRAR "$EXTRACTNAME" ../ || $UNRAR "$EXTRACTNAME"
-    [[ $? -eq 0 ]] && {
+    RET=$?
+    [[ $RET -eq 0 ]] && {
+      echo $RDIR/$DNAME >>$RDIR/$LOGFILE.complete
       ls -1 $RDIR/$DNAME >$RDIR/$LOGFILE.tmp
       while read -a FNAME; do
-        for FTYPE in $FILETYPES; do
-          [[ ! -z "$(echo $FNAME | grep -e $FTYPE)" && -e $FNAME ]] && $RM $FNAME && SNAME=$FNAME
-        done
-      done < $RDIR/$LOGFILE.tmp
-      while read -a FNAME; do
         [[ ! -z "$(echo $FNAME | grep -e "\.[Ss][Ff][Vv]$")" && -e $FNAME ]] && {
-          [[ ! -z "$(grep -r $SNAME $FNAME)" ]] && $RM $FNAME && break
+          [[ ! -z "$(grep -ir "$EXTRACTNAME" $FNAME)" ]] && {
+            for DELME in $(cat $FNAME | grep -v "^;"); do
+              [[ -f $DELME ]] && $RM $DELME
+            done
+            $RM $FNAME && break
+          }
         }
       done < $RDIR/$LOGFILE.tmp
       rm $RDIR/$LOGFILE.tmp
+      [[ ! -e $RDIR/$DNAME ]] && break
       [[ $(ls -1 $RDIR/$DNAME | grep -v "^\ " | grep -v "^\." | grep -v "$COMPLETEDIR" | wc -l) -eq 0 ]] && $RMDIR $RDIR/$DNAME
     }
-  }
+    [[ $RET -ne 0 ]] && echo "Error in archive $RDIR/$DNAME/$EXTRACTNAME - skipping this dir." && break
+    [[ ! -z "$(echo $RM | grep "echo")" ]] && echo "running in testmode - unable to test for more than one release in the dir w/o going into endless loop. breaking." && break
+  done
 done
 rm $RDIR/$LOGFILE
 rm $RDIR/$LOGFILE.pid
+[[ $CHMOD_DIRS -eq 1 ]] && {
+  while read -a CDIR; do
+    [[ -d $CDIR ]] && chmod 555 $CDIR
+  done < $RDIR/$LOGFILE.complete
+}
+rm $RDIR/$LOGFILE.complete
 

@@ -5,7 +5,7 @@ These scripts were made by request. What they do is unrar files, keeping the
 dir structure. It should be "safe" - only the rar-files found initially will
 be removed after a successful unpacking - ie, if the unpacking fails, no files
 will be removed. Also, if there are rar files within a rar archive (like with
-subs) the new rar file(s) will not be removed.
+subs) the new rar file(s) will either be processed as well, or ignored.
 
 A testmode is on by default, meaning no files will be extracted, and no files
 will be removed. This to help you test before putting it "live".
