@@ -48,6 +48,9 @@
 #  ! outputs statistics on how many dirs were resorted, and on each dir sorted.
 #  ! retabbed the whole script to proper retab.
 #  + added vim modeline <3
+#  + $defaultroot variable can now be used to set the default glroot if none is specified on the cmldine.
+#    (default is /glftpd)
+#  ! made output-matching from rescan a bit more friendly.
 #
 #  from 1.3
 #  ! now chmods the rmscript to 755.
@@ -100,21 +103,29 @@
 use strict;
 
 my $rescan = '/bin/rescan';         # Change if you've moved it / using another rescanner.
+
 my $rmscript = 'rmlog.sh';          # Generates 'rmlog.sh' in /, containing rm -rf "$dir" on all failed rels.
                                     # Set to '' to disable this feature. ;-)
                                     # NOTE: You actually need to run this script MANUALLY if you want to rm the releases. ;)
 
 my $zipscan = 1;                    # Set to 0 if you do not want to rescan dirs with .zips. :)
+
 my $preservestamp = 1;              # Set to 0 if you do not want to preserve timestamps on dirs.
+
 my $stampfromfile = 0;              # Set to 1 if you want to fetch the timestamp from the first zip/sfv-file in thedir.
                                     # Useful for people who've run the original script (1.4rc1 or before), and want to regen.
+
 my $printeach = 1;                  # Set to 0 if you do not want it to output "PASSED:" and "FAILED:" for each rescan. 
 
 my $onlysort = 0;                   # Set to 1 if you only want to resort mp3 releases, and never run rescan.
                                     # Does not create rmscript. Remember; rescan resorts too!
                                     # SO ONLY USE THIS FEATURE IF YOU WANT TO SAVE TIME, IF YOU KNOW ALL RELEASES
                                     # ARE CRC-CHECKED, OR WANT TO SORT SFV-LESS RELEASES!
+
 my $audiosort = '/bin/audiosort';   # This defines what bin we use instead of /bin/rescan if $onlysort = 1. :)
+
+my $defaultroot = '/glftpd';        # This defines what total-rescan uses for glroot if nothing is set on the commandline.
+
 
 ######    NOTICE
 #### Below here should not be changed (unless you're hacking this script, or fixing a bug). :)
@@ -126,7 +137,7 @@ my $version = '.4';
 print "+ Starting total rescan v1$version by daxxar ^ team pzs-ng.\n";
 
 my $path = shift;
-my $glroot = shift || '/glftpd';
+my $glroot = shift || $defaultroot || '/glftpd';
 $glroot =~ s/(?<!\/)$/\//;
 
 $rmscript = '' if not defined($rmscript) or $onlysort;
@@ -188,8 +199,8 @@ sub rescandir {
 
         my $output = `$rescan`;
         my ($passed, $total) = (-1, -1);
-        if ($output =~ /Passed ?: ?(\d+)$/m) { $passed = $1; }
-        if ($output =~ /Total ?: ?(\d+)$/m) { $total = $1; }
+        if ($output =~ /Passed\s*[:=]?\s*(\d+)\s*$/mi) { $passed = $1; }
+        if ($output =~ /Total\s*[:=]?\s*(\d+)\s*$/mi) { $total = $1; }
         
         if ($passed == -1 || $total == -1) {
             print STDERR "- ERROR! Output from $rescan on '$dir' was unparseable. (Nonstandard rescan binary?)\n";
