@@ -46,6 +46,8 @@
 #  from 1.4
 #  * now actually resorts if onlysort = 1 (problem with environment-variables made audiosort misbehave)
 #  ! outputs statistics on how many dirs were resorted, and on each dir sorted.
+#  ! retabbed the whole script to proper retab.
+#  + added vim modeline <3
 #
 #  from 1.3
 #  ! now chmods the rmscript to 755.
@@ -97,22 +99,22 @@
 
 use strict;
 
-my $rescan = '/bin/rescan';			# Change if you've moved it / using another rescanner.
-my $rmscript = 'rmlog.sh';			# Generates 'rmlog.sh' in /, containing rm -rf "$dir" on all failed rels.
-									# Set to '' to disable this feature. ;-)
-									# NOTE: You actually need to run this script MANUALLY if you want to rm the releases. ;)
+my $rescan = '/bin/rescan';         # Change if you've moved it / using another rescanner.
+my $rmscript = 'rmlog.sh';          # Generates 'rmlog.sh' in /, containing rm -rf "$dir" on all failed rels.
+                                    # Set to '' to disable this feature. ;-)
+                                    # NOTE: You actually need to run this script MANUALLY if you want to rm the releases. ;)
 
-my $zipscan = 1;					# Set to 0 if you do not want to rescan dirs with .zips. :)
-my $preservestamp = 1;				# Set to 0 if you do not want to preserve timestamps on dirs.
-my $stampfromfile = 0;				# Set to 1 if you want to fetch the timestamp from the first zip/sfv-file in thedir.
-									# Useful for people who've run the original script (1.4rc1 or before), and want to regen.
-my $printeach = 1;					# Set to 0 if you do not want it to output "PASSED:" and "FAILED:" for each rescan. 
+my $zipscan = 1;                    # Set to 0 if you do not want to rescan dirs with .zips. :)
+my $preservestamp = 1;              # Set to 0 if you do not want to preserve timestamps on dirs.
+my $stampfromfile = 0;              # Set to 1 if you want to fetch the timestamp from the first zip/sfv-file in thedir.
+                                    # Useful for people who've run the original script (1.4rc1 or before), and want to regen.
+my $printeach = 1;                  # Set to 0 if you do not want it to output "PASSED:" and "FAILED:" for each rescan. 
 
-my $onlysort = 0;					# Set to 1 if you only want to resort mp3 releases, and never run rescan.
-									# Does not create rmscript. Remember; rescan resorts too!
-									# SO ONLY USE THIS FEATURE IF YOU WANT TO SAVE TIME, IF YOU KNOW ALL RELEASES
-									# ARE CRC-CHECKED, OR WANT TO SORT SFV-LESS RELEASES!
-my $audiosort = '/bin/audiosort';	# This defines what bin we use instead of /bin/rescan if $onlysort = 1. :)
+my $onlysort = 0;                   # Set to 1 if you only want to resort mp3 releases, and never run rescan.
+                                    # Does not create rmscript. Remember; rescan resorts too!
+                                    # SO ONLY USE THIS FEATURE IF YOU WANT TO SAVE TIME, IF YOU KNOW ALL RELEASES
+                                    # ARE CRC-CHECKED, OR WANT TO SORT SFV-LESS RELEASES!
+my $audiosort = '/bin/audiosort';   # This defines what bin we use instead of /bin/rescan if $onlysort = 1. :)
 
 ######    NOTICE
 #### Below here should not be changed (unless you're hacking this script, or fixing a bug). :)
@@ -131,112 +133,112 @@ $rmscript = '' if not defined($rmscript) or $onlysort;
 delete $ENV{'PWD'};
 
 if (!defined($path)) {
-	print STDERR "- Path to scan not defined, exiting.\n";
-	print STDERR "  (syntax: $0 <pattern> [glroot], pattern is relative to glroot, and a standard shell-pattern)\n";
-	exit 1;
+    print STDERR "- Path to scan not defined, exiting.\n";
+    print STDERR "  (syntax: $0 <pattern> [glroot], pattern is relative to glroot, and a standard shell-pattern)\n";
+    exit 1;
 }
 
 
 sub isscandir {
-	my $dir = shift || die("Need a param for isscandir()\n");
-	return 0 if -l $dir;
+    my $dir = shift || die("Need a param for isscandir()\n");
+    return 0 if -l $dir;
 
-	if (!opendir(TARGETDIR, $dir)) {
-		print STDERR "- Opening directory '$dir' for reading failed, skipping! ($!)\n";
-		return 0;
-	}
-		
-	while (($_ = readdir(TARGETDIR))) {
-		if (/^\./ || -d "$_") { next; }
-		if (!$onlysort && /\.sfv$/i) {
-			closedir(TARGETDIR);
-			return 1;
-		}
-		if (!$onlysort && $zipscan && /\.zip$/i) {
-			closedir(TARGETDIR);
-			return 1;
-		}
-		if ($onlysort && /\.mp3$/i) {
-			closedir(TARGETDIR);
-			return 1;
-		}
-	}
+    if (!opendir(TARGETDIR, $dir)) {
+        print STDERR "- Opening directory '$dir' for reading failed, skipping! ($!)\n";
+        return 0;
+    }
+        
+    while (($_ = readdir(TARGETDIR))) {
+        if (/^\./ || -d "$_") { next; }
+        if (!$onlysort && /\.sfv$/i) {
+            closedir(TARGETDIR);
+            return 1;
+        }
+        if (!$onlysort && $zipscan && /\.zip$/i) {
+            closedir(TARGETDIR);
+            return 1;
+        }
+        if ($onlysort && /\.mp3$/i) {
+            closedir(TARGETDIR);
+            return 1;
+        }
+    }
 
-	# In case the dir is without .sfv/.zip/.mp3. :)
-	closedir(TARGETDIR);
-	return 0;
+    # In case the dir is without .sfv/.zip/.mp3. :)
+    closedir(TARGETDIR);
+    return 0;
 }
 
 sub rescandir {
-	my $dir = shift || die("Need a param for rescandir()\n");
-	if (!chdir($dir)) {
-		print STDERR "- Changing dir to '$dir' failed, skipping! ($!)\n";
-		return 0;
-	}
+    my $dir = shift || die("Need a param for rescandir()\n");
+    if (!chdir($dir)) {
+        print STDERR "- Changing dir to '$dir' failed, skipping! ($!)\n";
+        return 0;
+    }
 
-	my $retval = 1;
-	if ($onlysort) {
-		`$audiosort`;
-	} else  {
-		my ($atime, $mtime);
-		if ($preservestamp) {
-			($atime, $mtime) = (stat( (glob('*.{sfv,diz,zip}'))[0] ))[8, 9] if $stampfromfile;
-			($atime, $mtime) = (stat('.'))[8, 9] if not $stampfromfile;
-		}
+    my $retval = 1;
+    if ($onlysort) {
+        `$audiosort`;
+    } else  {
+        my ($atime, $mtime);
+        if ($preservestamp) {
+            ($atime, $mtime) = (stat( (glob('*.{sfv,diz,zip}'))[0] ))[8, 9] if $stampfromfile;
+            ($atime, $mtime) = (stat('.'))[8, 9] if not $stampfromfile;
+        }
 
-		my $output = `$rescan`;
-		my ($passed, $total) = (-1, -1);
-		if ($output =~ /Passed ?: ?(\d+)$/m) { $passed = $1; }
-		if ($output =~ /Total ?: ?(\d+)$/m) { $total = $1; }
-		
-		if ($passed == -1 || $total == -1) {
-			print STDERR "- ERROR! Output from $rescan on '$dir' was unparseable. (Nonstandard rescan binary?)\n";
-			$retval = 0;
-		} elsif ($passed == $total) {
-			print "+ PASSED: $dir\n" if $printeach;
-			$retval = 1;
-		} else {
-			print "- FAILED: $dir\n" if $printeach;
-			if ($rmscript ne '') {
-				open(RMLOG, ">>/$rmscript");
-				print RMLOG "rm -rf '$glroot$dir'\n";
-				close(RMLOG);
-			}
-			$retval = 0;
-		}
-		
-		utime($atime, $mtime, '.') if $preservestamp;
-	}
-	chdir('/');
+        my $output = `$rescan`;
+        my ($passed, $total) = (-1, -1);
+        if ($output =~ /Passed ?: ?(\d+)$/m) { $passed = $1; }
+        if ($output =~ /Total ?: ?(\d+)$/m) { $total = $1; }
+        
+        if ($passed == -1 || $total == -1) {
+            print STDERR "- ERROR! Output from $rescan on '$dir' was unparseable. (Nonstandard rescan binary?)\n";
+            $retval = 0;
+        } elsif ($passed == $total) {
+            print "+ PASSED: $dir\n" if $printeach;
+            $retval = 1;
+        } else {
+            print "- FAILED: $dir\n" if $printeach;
+            if ($rmscript ne '') {
+                open(RMLOG, ">>/$rmscript");
+                print RMLOG "rm -rf '$glroot$dir'\n";
+                close(RMLOG);
+            }
+            $retval = 0;
+        }
+        
+        utime($atime, $mtime, '.') if $preservestamp;
+    }
+    chdir('/');
 
-	return $retval;
+    return $retval;
 }
 
 print "+ Changing root for script to '$glroot' and changing dir to '/'.\n";
 if ($glroot ne '/' && !chroot($glroot)) {
-	print STDERR "- Changing root failed! ($!)\n";
-	exit 1;
+    print STDERR "- Changing root failed! ($!)\n";
+    exit 1;
 }
 if (!chdir('/')) {
-	print STDERR "- WTF? Changing dir to '/' failed! ($!)\n";
-	exit 1;
+    print STDERR "- WTF? Changing dir to '/' failed! ($!)\n";
+    exit 1;
 }
 
 while (my $cpath = scalar glob $path) {
-	if (! -d $cpath) {
-		print STDERR "! Pattern '${glroot}${path}' matches something ('$cpath') that's not a dir (or does not exist)!\n";
-		print STDERR "  (syntax: $0 <pattern> [glroot], pattern is relative to glroot, and a standard shell-pattern)\n";
-		exit 1;
-	}
+    if (! -d $cpath) {
+        print STDERR "! Pattern '${glroot}${path}' matches something ('$cpath') that's not a dir (or does not exist)!\n";
+        print STDERR "  (syntax: $0 <pattern> [glroot], pattern is relative to glroot, and a standard shell-pattern)\n";
+        exit 1;
+    }
 }
 
 
 if ($rmscript ne '') {
-	print "+ Cleaning rmscript (/$rmscript)\n";
-	open(RMLOG, ">/$rmscript");
-	print RMLOG "echo '* Starting deletion of failed dirs.. :)'\n";
-	close(RMLOG);
-	chmod(0755, "/$rmscript");
+    print "+ Cleaning rmscript (/$rmscript)\n";
+    open(RMLOG, ">/$rmscript");
+    print RMLOG "echo '* Starting deletion of failed dirs.. :)'\n";
+    close(RMLOG);
+    chmod(0755, "/$rmscript");
 }
 
 
@@ -246,51 +248,53 @@ print "+ Scanning dirs for sfv-files & rescanning.\n" if not $zipscan;
 print "+ Scanning dirs for sfv/zip-files & rescanning.\n" if $zipscan;
 my @dirs;
 while (my $cdir = scalar glob $path) {
-	my @dirs = ($cdir);
-	while ((my $dir = shift @dirs)) {
-		if (!opendir(DIR, $dir)) {
-			print STDERR "- Opening directory '$dir' for reading failed, skipping! ($!)\n";
-			next;
-		}
+    my @dirs = ($cdir);
+    while ((my $dir = shift @dirs)) {
+        if (!opendir(DIR, $dir)) {
+            print STDERR "- Opening directory '$dir' for reading failed, skipping! ($!)\n";
+            next;
+        }
 
-		while (($_ = readdir(DIR))) {
-			my $tdir = "$dir/$_";
-			if (/^\./ || ! -d $tdir) { next; }
-			unshift(@dirs, "$tdir"); 
+        while (($_ = readdir(DIR))) {
+            my $tdir = "$dir/$_";
+            if (/^\./ || ! -d $tdir) { next; }
+            unshift(@dirs, "$tdir"); 
 
-			if (isscandir($tdir)) {
-				++$scanneddirs;
-				print "+ RESORTING: $tdir\n" if $onlysort and $printeach;
-				if (rescandir($tdir)) {
-					++$gooddirs;
-				} else {
-					++$baddirs;
-				}
-			}
-		}
-		closedir(DIR);
-	}
+            if (isscandir($tdir)) {
+                ++$scanneddirs;
+                print "+ RESORTING: $tdir\n" if $onlysort and $printeach;
+                if (rescandir($tdir)) {
+                    ++$gooddirs;
+                } else {
+                    ++$baddirs;
+                }
+            }
+        }
+        closedir(DIR);
+    }
 }
 
 if (!$scanneddirs) {
-	print "! Could not find any dirs containing any SFVs under '$path', exiting.\n" if not $zipscan;
-	print "! Could not find any dirs containing any SFVs or ZIPs under '$path', exiting.\n" if $zipscan;
-	exit 1;
+    print "! Could not find any dirs containing any SFVs under '$path', exiting.\n" if not $zipscan;
+    print "! Could not find any dirs containing any SFVs or ZIPs under '$path', exiting.\n" if $zipscan;
+    exit 1;
 }
 
 if ($onlysort) {
-	print "+ Total resorted: $scanneddirs\n";
+    print "+ Total resorted: $scanneddirs\n";
 } else {
-	print "+ Good dirs: $gooddirs\n";
-	print "!  Bad dirs: $baddirs\n";
-	print "+     Total: $scanneddirs\n";
+    print "+ Good dirs: $gooddirs\n";
+    print "!  Bad dirs: $baddirs\n";
+    print "+     Total: $scanneddirs\n";
 }
 
 if ($rmscript ne '') {
-	print "+ Adding 'closing entry' to rmscript ;)\n";
-	open(RMLOG, ">>/$rmscript");
-	print RMLOG "echo '* All done with deletion! :D'\n";
-	close(RMLOG);
+    print "+ Adding 'closing entry' to rmscript ;)\n";
+    open(RMLOG, ">>/$rmscript");
+    print RMLOG "echo '* All done with deletion! :D'\n";
+    close(RMLOG);
 }
 
 print "+ Done! :)\n";
+
+# vim:set expandtab shiftwidth=4 softtabstop=4:
