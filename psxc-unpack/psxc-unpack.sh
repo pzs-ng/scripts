@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# psxc-unpack.sh v0.7 (c) psxc//2006
+# psxc-unpack.sh v0.8 (c) psxc//2006
 ####################################
 #
 # This simple little thingy extracts files in a dir and removes the
@@ -50,6 +50,9 @@ SITEDIR=/site
 # put /glftpd in front of this.
 LOGFILE=/tmp/psxc-unpack.log
 
+# glftpd's logfile (within chroot) - used for announces.
+GLLOG=/ftp-data/logs/glftpd.log
+
 # in what dirs should this script be executed?
 DIRS="/site/XVID /site/DVDR"
 
@@ -73,6 +76,11 @@ SUBDIRS="^[Cc][Dd][0-9a-zA-Z]$ ^[Dd][Vv][Dd][0-9a-zA-Z]$ ^[Ss][Uu][Bb][Ss]*$"
 
 # how your completedirs look like. (This is regexp style, so keep the .*)
 COMPLETEDIR=".*\[*\].*[Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ee].*\[*\].*"
+
+# this variable holds a list of files/dirs to remove if extraction was complete.
+# (not regexp style, so slightly different.) separate with a space.
+# default setting removes the complete bar, sample dir and dot-files (like .message)
+RMFILES="*\[*\]*[Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ee]*\[*\]* [Ss][Aa][Mm][Pp][Ll][Ee] \.[a-zA-Z0-9]*"
 
 # set this to '1' to make the script run immediatly after release is complete
 RUN_NOW=0
@@ -162,19 +170,25 @@ while [ 1 ]; do
         }
       done < $RDIR/$LOGFILE.tmp
       rm $RDIR/$LOGFILE.tmp
+      [[ ! -z "$RMFILES" ]] && {
+        for DELME in $RMFILES; do
+          $RMDIR ./$DELME
+        done
+      }
       [[ ! -e $RDIR/$DNAME ]] && break
       [[ $(ls -1 $RDIR/$DNAME | grep -v "^\ " | grep -v "^\." | grep -v "$COMPLETEDIR" | wc -l) -eq 0 ]] && $RMDIR $RDIR/$DNAME
     }
     [[ $RET -ne 0 ]] && echo "Error in archive $RDIR/$DNAME/$EXTRACTNAME - skipping this dir." && break
     [[ ! -z "$(echo $RM | grep "echo")" ]] && echo "running in testmode - unable to test for more than one release in the dir w/o going into endless loop. breaking." && break
   done
+  [[ ! -z "$GLLOG" ]] && echo "$(date "+%a %b %e %T %Y") PSXCUNPACK: {$DNAME}" >>$RDIR/$GLLOG
 done
-rm $RDIR/$LOGFILE
-rm $RDIR/$LOGFILE.pid
-[[ $CHMOD_DIRS -eq 1 ]] && {
+[[ $CHMOD_DIRS -eq 1 && $RET -eq 0 ]] && {
   while read -a CDIR; do
     [[ -d $CDIR ]] && chmod 555 $CDIR
   done < $RDIR/$LOGFILE.complete
 }
-rm $RDIR/$LOGFILE.complete
+[[ -e $$RDIR/$LOGFILE ]] && rm $RDIR/$LOGFILE
+[[ -e $$RDIR/$LOGFILE.complete ]] && rm $RDIR/$LOGFILE.complete
+[[ -e $$RDIR/$LOGFILE.pid ]] && rm $RDIR/$LOGFILE.pid
 
