@@ -24,6 +24,9 @@ extract the file(s) to parent dir. Also, if the subdir is empty (not counting
 the COMPLETE dir/file and any files starting with a dot, like .message), it
 will try to delete the entire subdir. This is, ofcourse, optional.
 
+Optional is also the separate config file (psxc-unpack.conf). If you wish to
+use it, copy it to /glftpd/etc and edit.
+
 Enjoy.
 
 //psxc(C)2006
