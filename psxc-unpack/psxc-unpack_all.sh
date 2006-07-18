@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# psxc-unpack_all.sh v0.9 (c) psxc//2006
+# psxc-unpack_all.sh v1.0 (c) psxc//2006
 ########################################
 #
 # This here is an addon to psxc-unpack.sh.
@@ -24,7 +24,7 @@ GLROOT=/glftpd
 UNPACK_CONF=/etc/psxc-unpack.conf
 
 # your *Complete* dir/file looks like... 
-COMPLETE_DIR="*\[*\]*[Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ee]*\[*\]*"
+COMPLETE_DIR="*\[*\]*[-][ ][Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ee]*\[*\]*"
 
 # nuked dir style
 NUKED_DIRS="\[NUKED\]*"

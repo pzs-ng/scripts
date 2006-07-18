@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# psxc-unpack.sh v0.9 (c) psxc//2006
+# psxc-unpack.sh v1.0 (c) psxc//2006
 ####################################
 #
 # This simple little thingy extracts files in a dir and removes the
@@ -78,7 +78,7 @@ FILETYPES="\.[Rr0-9][aA0-9][rR0-9]$"
 SUBDIRS="^[Cc][Dd][0-9a-zA-Z]$ ^[Dd][Vv][Dd][0-9a-zA-Z]$ ^[Ss][Uu][Bb][Ss]*$"
 
 # how your completedirs look like. (This is regexp style, so keep the .*)
-COMPLETEDIR=".*\[*\].*[Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ee].*\[*\].*"
+COMPLETEDIR=".*\[.*\].*[-].[Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ee].*\[.*\].*"
 
 # this variable holds a list of files/dirs to remove if extraction was complete.
 # (not regexp style, so slightly different.) separate with a space.
@@ -97,13 +97,19 @@ MAGICWORD="now"
 # variable to 1.
 CHMOD_DIRS=1
 
+# Touch a file if extraction of the archive fails? Set to "" to disable.
+# The file will be placed in the 'main' dir - ie, not in the subdir.
+# Forbidden chars include / & \ $ [:space:] (they will be replaced with _)
+# The first ''%%'' encountered will be replaced with the name of the archive.
+UNPACKERROR="  PSXC-UNPACK - FAILED TO UNPACK ARCHIVE (%%)  "
+
 ################################################################
 # CODE BELOW - PLEASE IGNORE
 ################################################################
 
-init_dir=$(echo $DIRS | tr ' ' '\n' | head -n 1)
 RDIR=""
-[[ -d $GLROOT/$init_dir ]] && RDIR=$GLROOT
+[[ -d $GLROOT/bin ]] && RDIR=$GLROOT
+[[ -e $RDIR/$UNPACK_CONF ]] && source $RDIR/$UNPACK_CONF
 [[ -e $RDIR/$UNPACK_CONF ]] && source $RDIR/$UNPACK_CONF
 [[ ! -e $RDIR/$LOGFILE ]] && :>$RDIR/$LOGFILE && chmod 666 $RDIR/$LOGFILE
 [[ ! -w $RDIR/$LOGFILE ]] && echo "HELP! UNABLE TO LOG DIRS! CHECK PERMS" && exit 1
@@ -165,8 +171,10 @@ while [ 1 ]; do
     for SUBDIR in $SUBDIRS; do
       [[ ! -z "$(basename $DNAME | grep -e "$SUBDIR")" ]] && SMATCH=1 && break
     done
-    [[ $SMATCH -eq 1 ]] && $UNRAR "$EXTRACTNAME" ../ || $UNRAR "$EXTRACTNAME"
+    [[ $SMATCH -eq 1 ]] && PARENT="../" || PARENT=""
+    $UNRAR "$EXTRACTNAME" $PARENT
     RET=$?
+    UNPACKERR="$(echo "$UNPACKERROR" | tr '/\$\\\&\ ' '_' | sed "s|%%|$EXTRACTNAME|")"
     [[ $RET -eq 0 ]] && {
       echo $RDIR/$DNAME >>$RDIR/$LOGFILE.complete
       ls -1 $RDIR/$DNAME >$RDIR/$LOGFILE.tmp && chmod 666 $RDIR/$LOGFILE.tmp
@@ -200,12 +208,18 @@ while [ 1 ]; do
         done
       }
       [[ ! -e $RDIR/$DNAME ]] && break
-      [[ $(ls -1 $RDIR/$DNAME | grep -v "^\ " | grep -v "^\." | grep -v "$COMPLETEDIR" | wc -l) -eq 0 ]] && $RMDIR $RDIR/$DNAME
+      [[ $(ls -1 $RDIR/$DNAME | grep -v "^\ " | grep -v "^\." | grep -v "$COMPLETEDIR" | grep -v "$UNPACKERR" | wc -l) -eq 0 ]] && $RMDIR $RDIR/$DNAME
     }
-    [[ $RET -ne 0 ]] && echo "Error in archive $RDIR/$DNAME/$EXTRACTNAME - skipping this dir." && break
+    RETMODE=$RET
+    [[ $RET -ne 0 ]] && {
+      echo "Error in archive $RDIR/$DNAME/$EXTRACTNAME - skipping this dir."
+      [[ "$UNPACKERR" != "" ]] && :>$RDIR/$DNAME/$PARENT/"$UNPACKERR" && chmod 666 $RDIR/$DNAME/$PARENT/"$UNPACKERR"
+      break
+    }
     [[ ! -z "$(echo $RM | grep "echo")" ]] && echo "running in testmode - unable to test for more than one release in the dir w/o going into endless loop. breaking." && break
   done
-  [[ ! -z "$GLLOG" ]] && echo "$(date "+%a %b %e %T %Y") PSXCUNPACK: {$DNAME}" >>$RDIR/$GLLOG
+  [[ ! -z "$GLLOG" && $RETMODE -eq 0 ]] && echo "$(date "+%a %b %e %T %Y") PSXCUNPACK: {$DNAME}" >>$RDIR/$GLLOG
+  [[ ! -z "$GLLOG" && $RETMODE -ne 0 ]] && echo "$(date "+%a %b %e %T %Y") PSXCUNPACKERROR: {$DNAME}" >>$RDIR/$GLLOG
 done
 [[ $CHMOD_DIRS -eq 1 && $RET -eq 0 ]] && {
   while read -a CDIR; do

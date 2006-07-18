@@ -27,6 +27,12 @@ will try to delete the entire subdir. This is, ofcourse, optional.
 Optional is also the separate config file (psxc-unpack.conf). If you wish to
 use it, copy it to /glftpd/etc and edit.
 
+The script also echo a line into glftpd.log, if defined. The keywords are
+PSXCUNPACK: if the extraction went well, and PSXCUNPACKERROR: if it failed.
+Only one variable is passed in either instance - the name of the dir (the
+%pf variable for those in the know). Beyond this explanation, i will give
+no further bot support.
+
 Enjoy.
 
 //psxc(C)2006
