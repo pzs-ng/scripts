@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# psxc-unpack.sh v1.0 (c) psxc//2006
+# psxc-unpack.sh v1.1 (c) psxc//2006
 ####################################
 #
 # This simple little thingy extracts files in a dir and removes the
@@ -172,7 +172,7 @@ while [ 1 ]; do
       [[ ! -z "$(basename $DNAME | grep -e "$SUBDIR")" ]] && SMATCH=1 && break
     done
     [[ $SMATCH -eq 1 ]] && PARENT="../" || PARENT=""
-    $UNRAR "$EXTRACTNAME" $PARENT
+    $UNRAR "$EXTRACTNAME" #$PARENT
     RET=$?
     UNPACKERR="$(echo "$UNPACKERROR" | tr '/\$\\\&\ ' '_' | sed "s|%%|$EXTRACTNAME|")"
     [[ $RET -eq 0 ]] && {
@@ -198,8 +198,8 @@ while [ 1 ]; do
           let num_dots-=1
         done
         [[ $num_dots -gt 0 ]] && {
-          $RM ./$partial.[Pp][Aa][Rr][Tt]*.[Rr][Aa][Rr]
-          $RM ./$partial.[Rr0-9][Aa0-9][Rr0-9]
+          $RM ./$partial.[Pp][Aa][Rr][Tt]*.[Rr][Aa][Rr] 2>/dev/null
+          $RM ./$partial.[Rr0-9][Aa0-9][Rr0-9] 2>/dev/null
         }
       }
       [[ ! -z "$RMFILES" ]] && {
@@ -207,13 +207,18 @@ while [ 1 ]; do
           $RMDIR ./$DELME
         done
       }
+      [[ ! -z "$PARENT" ]] && {
+        CHECKSUB=$(find ./ -name *.[Rr0-9][Aa0-9][Rr0-9] | tr -cd 'A-Za-z0-9')
+        [[ -z "$CHECKSUB" ]] && mv ./* ../ && $RMDIR $PWD
+      }
       [[ ! -e $RDIR/$DNAME ]] && break
       [[ $(ls -1 $RDIR/$DNAME | grep -v "^\ " | grep -v "^\." | grep -v "$COMPLETEDIR" | grep -v "$UNPACKERR" | wc -l) -eq 0 ]] && $RMDIR $RDIR/$DNAME
     }
     RETMODE=$RET
     [[ $RET -ne 0 ]] && {
       echo "Error in archive $RDIR/$DNAME/$EXTRACTNAME - skipping this dir."
-      [[ "$UNPACKERR" != "" ]] && :>$RDIR/$DNAME/$PARENT/"$UNPACKERR" && chmod 666 $RDIR/$DNAME/$PARENT/"$UNPACKERR"
+#      [[ "$UNPACKERR" != "" ]] && :>$RDIR/$DNAME/$PARENT/"$UNPACKERR" && chmod 666 $RDIR/$DNAME/$PARENT/"$UNPACKERR"
+      [[ "$UNPACKERR" != "" ]] && :>$RDIR/$DNAME/"$UNPACKERR" && chmod 666 $RDIR/$DNAME/"$UNPACKERR"
       break
     }
     [[ ! -z "$(echo $RM | grep "echo")" ]] && echo "running in testmode - unable to test for more than one release in the dir w/o going into endless loop. breaking." && break

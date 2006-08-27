@@ -1,0 +1,14 @@
+psxc-unpack changelog
+---------------------
+
+v1.0 - First official release.
+
+v1.1 - Fixed a bug when extracting from subdirs - if the rarfile(s) in a subdir
+       contained another (set of) rar-file(s), which was named the same as the
+       one(s) in the main dir, the files in the main dir would be overwritten.
+     - Removed (redirected) an "error" message complaining about being unable
+       to remove files that was not there. We don't care about that.
+
+
+// psxc(c)2006
+

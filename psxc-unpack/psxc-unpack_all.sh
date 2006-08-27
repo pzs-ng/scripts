@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# psxc-unpack_all.sh v1.0 (c) psxc//2006
+# psxc-unpack_all.sh v1.1 (c) psxc//2006
 ########################################
 #
 # This here is an addon to psxc-unpack.sh.
