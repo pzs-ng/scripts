@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# psxc-unpack.sh v1.1 (c) psxc//2006
+# psxc-unpack.sh v1.2 (c) psxc//2006
 ####################################
 #
 # This simple little thingy extracts files in a dir and removes the
@@ -185,7 +185,7 @@ while [ 1 ]; do
             for DELME in $(cat $FNAME | grep -v "^;"); do
               [[ -f $(find ./ -iname $DELME) ]] && $RM $(find ./ -iname $DELME)
             done
-            $RM $FNAME && break
+            $RM "$FNAME" && break
           }
         }
       done < $RDIR/$LOGFILE.tmp
@@ -198,13 +198,13 @@ while [ 1 ]; do
           let num_dots-=1
         done
         [[ $num_dots -gt 0 ]] && {
-          $RM ./$partial.[Pp][Aa][Rr][Tt]*.[Rr][Aa][Rr] 2>/dev/null
-          $RM ./$partial.[Rr0-9][Aa0-9][Rr0-9] 2>/dev/null
+          $RM "./$partial.[Pp][Aa][Rr][Tt]*.[Rr][Aa][Rr]" 2>/dev/null
+          $RM "./$partial.[Rr0-9][Aa0-9][Rr0-9]" 2>/dev/null
         }
       }
       [[ ! -z "$RMFILES" ]] && {
         for DELME in $RMFILES; do
-          $RMDIR ./$DELME
+          $RMDIR "./$DELME"
         done
       }
       [[ ! -z "$PARENT" ]] && {
@@ -228,7 +228,7 @@ while [ 1 ]; do
 done
 [[ $CHMOD_DIRS -eq 1 && $RET -eq 0 ]] && {
   while read -a CDIR; do
-    [[ -d $CDIR ]] && chmod 555 $CDIR
+    [[ -d "$CDIR" ]] && chmod 555 "$CDIR"
   done < $RDIR/$LOGFILE.complete
 }
 [[ -e $RDIR/$LOGFILE ]] && rm $RDIR/$LOGFILE

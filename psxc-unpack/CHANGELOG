@@ -8,7 +8,8 @@ v1.1 - Fixed a bug when extracting from subdirs - if the rarfile(s) in a subdir
        one(s) in the main dir, the files in the main dir would be overwritten.
      - Removed (redirected) an "error" message complaining about being unable
        to remove files that was not there. We don't care about that.
-
+v1.2 - Fixed an issue regarding files/dirs with spaces - seen especially if the
+       complete-dir had spaces, and was suppoesed t obe removed after unpack.
 
 // psxc(c)2006
 
