@@ -99,11 +99,12 @@ unsigned int minhours, cnt1, cnt2;
 char *p = NULL, *q = NULL;
 time_t timenow;
 
-if (argc == 1 || !strcmp(argv[1],"--help")) {
+if (argc == 1 || !strcmp(argv[1],"--help") || strlen(argv[1]) == 0) {
 	printf("\nUsage:   %s <hours> [path]\n",argv[0]);
 	printf("         hours : nuked dirs older than <hours> hours will be wiped.\n");
-	printf("         path  : minimum path to match (optional).\n");
-	printf("Example: %s 72 /site/incoming/0DAY*  <- will remove nukes in 0day older than 3 days.\n\n", argv[0]);
+	printf("         path  : (minimum) path to match (optional).\n");
+	printf("Example: %s 72 /site/incoming/0DAY  <- will remove nukes in 0day older than 3 days.\n", argv[0]);
+	printf("Example: %s 72 */0DAY/*             <- will remove nukes in 0day older than 3 days.\n\n", argv[0]);
 	return 0;
 	}
 minhours = atoi(argv[1]);
@@ -114,7 +115,7 @@ else
 
 seteuid(0);
 snprintf(nukelog, sizeof(nukelog), "/%s/%s", GLROOT, NUKELOG);
-if ((file = fopen(nukelog, "r+b")) == NULL) {
+if ((file = fopen(nukelog, "rb")) == NULL) {
 	printf("Unable to open (read) %s: %s\n",nukelog, strerror(errno));
 	return 1;
 }
@@ -128,7 +129,7 @@ fclose(file2);
 while(!feof(file)) {
 	if (fread(&nukeentry, sizeof(struct nukelog), 1, file) < 1)
 		break;
-	if ((unsigned int)get_dirage(nukeentry.nuketime) > minhours && !nukeentry.status) {
+	if ((unsigned int)get_dirage(nukeentry.nuketime) >= minhours && !nukeentry.status) {
 		snprintf(temp, sizeof(temp), "%s", nukeentry.dirname);
 		p = temp;
 		cnt1 = 0;		
@@ -160,6 +161,7 @@ while(!feof(file)) {
 			if (system(temp2) == -1)
 				printf("Error: failed to execute %s : %s\n", temp2, strerror(errno));
 		}
+
 	}
 }
 fclose(file);
