@@ -16,6 +16,6 @@ proc psxc_nukewipe {nick uhost hand chan argv} {
     }
     putserv "PRIVMSG $chan :\002$psxcnc(SITENAME)\002 - \037NUKEWIPE:\037 Done."
 }
-putlog "Loaded: psxc-nukewipe v0.01 psxc(C)2006"
+putlog "Loaded: psxc-nukewipe v0.02 psxc(C)2006"
 
 

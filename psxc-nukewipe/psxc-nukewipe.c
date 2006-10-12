@@ -1,5 +1,5 @@
 /* 
- * psxc-nukewipe v0.1
+ * psxc-nukewipe v0.2
  * ==================
  * Small script/binary to help remove nuked releases. May be used as a channel
  * command (!nukewipe) or as a crontabbed script.
@@ -24,7 +24,7 @@
 
 /* The prefix in glftpd.log - should match your bot.
  */
-#define PREFIX		"NWIPE"
+#define PREFIX		"NWIPE:"
 
 /* Where you have installed glftpd - see rootpath in glftpd.docs.
  */
@@ -38,15 +38,16 @@
  */
 #define GLLOG		"/ftp-data/logs/glftpd.log"
 
-/* What to do with nuked dirs found. Add 'echo' in front to turn on testmode.
- */
-#define RMCOMMAND	"echo rm -fR"
-
 /*
  * END OF CONFIG
  ***************************************************************
  ***************************************************************
  */
+
+/*
+ * Workaround for linux
+ */
+#define _GNU_SOURCE 1
 
 #include <time.h>
 #include <sys/param.h>
@@ -58,6 +59,8 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <fnmatch.h>
+
+int get_dirage(time_t);
 
 struct nukelog {
         ushort status;          /* 0 = NUKED, 1 = UNNUKED */
@@ -93,25 +96,42 @@ char nukelog[MAXPATHLEN];
 char gllog[MAXPATHLEN];
 char nukeddir[MAXPATHLEN];
 char mindir[MAXPATHLEN];
+char rmcommand[12];
 struct nukelog nukeentry;
 struct stat st;
 unsigned int minhours, cnt1, cnt2;
 char *p = NULL, *q = NULL;
 time_t timenow;
 
-if (argc == 1 || !strcmp(argv[1],"--help") || strlen(argv[1]) == 0) {
-	printf("\nUsage:   %s <hours> [path]\n",argv[0]);
+if (argc > 1 && !strcmp(argv[1],"--test")) {
+	strncpy(rmcommand, "echo rm -fR", sizeof(rmcommand));
+	cnt1 = 2;
+	cnt2 = 3;
+} else {
+	strncpy(rmcommand, "rm -fR", sizeof(rmcommand));
+	cnt1 = 1;
+	cnt2 = 2;
+}
+
+if ((unsigned)argc == cnt1 || !strcmp(argv[cnt1],"--help") || strlen(argv[cnt1]) == 0 || !(argv[cnt1][0] >= '0' && argv[cnt1][0] <= '9')) {
+	printf("\nUsage:   psxc-nukewipe <hours> [path]\n");
 	printf("         hours : nuked dirs older than <hours> hours will be wiped.\n");
 	printf("         path  : (minimum) path to match (optional).\n");
-	printf("Example: %s 72 /site/incoming/0DAY  <- will remove nukes in 0day older than 3 days.\n", argv[0]);
-	printf("Example: %s 72 */0DAY/*             <- will remove nukes in 0day older than 3 days.\n\n", argv[0]);
+	printf("Example: psxc-nukewipe 72 /site/incoming/0DAY  <- will remove nukes in 0day older than 3 days.\n");
+	printf("Example: psxc-nukewipe 72 */0DAY/*             <- will remove nukes in 0day older than 3 days.\n\n");
 	return 0;
-	}
-minhours = atoi(argv[1]);
-if (argc > 2)
-	strncpy(mindir, argv[2], sizeof(mindir));
+}
+
+minhours = atoi(argv[cnt1]);
+if ((unsigned int)argc > cnt2)
+	strncpy(mindir, argv[cnt1 + 1], sizeof(mindir));
 else
 	sprintf(mindir, "/");
+
+if (mindir[strlen(mindir) - 1] == '/' && strlen(mindir) < (sizeof(mindir) - 1)) {
+	mindir[strlen(mindir) + 1] = '\0';
+	mindir[strlen(mindir)] = '*';
+}
 
 seteuid(0);
 snprintf(nukelog, sizeof(nukelog), "/%s/%s", GLROOT, NUKELOG);
@@ -132,7 +152,7 @@ while(!feof(file)) {
 	if ((unsigned int)get_dirage(nukeentry.nuketime) >= minhours && !nukeentry.status) {
 		snprintf(temp, sizeof(temp), "%s", nukeentry.dirname);
 		p = temp;
-		cnt1 = 0;		
+		cnt1 = 0;
 		cnt2 = 0;
 		while (1) {
 			while (p[cnt1] != '/' && p[cnt1] != '\0')
@@ -150,14 +170,14 @@ while(!feof(file)) {
 		if (stat(nukeddir, &st) == 0 && (!fnmatch(mindir, temp2, FNM_PATHNAME|FNM_LEADING_DIR) || !fnmatch(mindir, temp2, 0))) {
 			if ((file2 = fopen(gllog, "ab")) != NULL) {
 				timenow = time(NULL);
-				fprintf(file2, "%.24s \"%s: \"%s/%s%s\" \"%s\" \"%.2f\"\n", ctime(&timenow), PREFIX, p, NUKESTRING, q, q, nukeentry.bytes);
+				fprintf(file2, "%.24s %s \"%s/%s%s\" \"%s\" \"%.2f\"\n", ctime(&timenow), PREFIX, p, NUKESTRING, q, q, nukeentry.bytes);
 			} else {
 				printf("Unable to open (append) %s: %s\n",gllog, strerror(errno));
 				fclose(file);
 				return 1;
 			}
 			fclose(file2);
-			snprintf(temp2, sizeof(temp2), "%s %s", RMCOMMAND, nukeddir);
+			snprintf(temp2, sizeof(temp2), "%s %s", rmcommand, nukeddir);
 			if (system(temp2) == -1)
 				printf("Error: failed to execute %s : %s\n", temp2, strerror(errno));
 		}
