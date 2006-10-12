@@ -1,0 +1,51 @@
+############################################
+# psxc-nukewipe v0.2 - by psxc(C)2006
+# ==================
+# 
+# Small script/binary to help remove nuked releases. May be used as a channel
+# command (!nukewipe) or as a crontabbed script.
+# The script takes two args - number of hours old the nuke must be before
+# it can be wiped, and an optional path arg, to only remove nukes according to
+# path.
+#
+# First, edit psxc-nukewipe.c - there's a few options that needs to be correct
+# in order for the script to work.
+#
+# To compile, do:
+#   gcc -g -W -O2 -Wall -static -o /glftpd/bin/psxc-nukewipe psxc-nukewipe.c
+#
+# On 64bit processors you need to add -m32:
+#   gcc -g -W -m32 -O2 -Wall -static -o /glftpd/bin/psxc-nukewipe psxc-nukewipe.c
+#
+# If the bin is to be run by bot or crontabbed as non-root, the bin needs +s:
+#   chmod +s /glftpd/bin/psxc-nukewipe
+#
+# -----------------------------------------------------------------------------
+#
+# If you want botsupport, copy psxc-nukewipe.tcl to your eggdrop scripts/ dir.
+# Then edit scripts/psxc-nukewipe.tcl according to your wishes.
+#
+# To make your bot announce, add the following to the pzs-ng version of dZSbot:
+#
+# in dZSbot.conf, add the following:
+#   set disable(NWIPE)        0
+#   set redirect(NWIPE)       $staffchan
+#
+# in dZSbot.conf.defaults, add NWIPE to the list of msgtypes(SECTION)
+#
+# in dZSbot.vars, add the following:
+#   set variables(NWIPE)        "%pf %releasename %size"
+#
+# in default.zst (or whatever theme you use), add the following:
+#   announce.WIPE             = "[%b{nwipe }][%section] %b{%relname} (%b{%size}MB) got wiped."
+#
+# -----------------------------------------------------------------------------
+#
+# Usage:   psxc-nukewipe <hours> [path]
+#          hours : nuked dirs older than <hours> hours will be wiped.
+#          path  : (minimum) path to match (optional).
+# Example: psxc-nukewipe 72 /site/incoming/0DAY/ <- will remove nukes in 0day older than 3 days.
+# Example: psxc-nukewipe 72 */0DAY/*             <- will remove nukes in 0day older than 3 days.
+#
+#
+

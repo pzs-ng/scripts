@@ -4,9 +4,12 @@ set psxcnc(NUKEWIPE) "/glftpd/bin/psxc-nukewipe"
 set psxcnc(CMDPRE) "!PS"
 set psxcnc(SITENAME) "\[PS\]"
 
-######## End Configuration #########
+######## The bind option - by default anyone can use this command #########
 
 bind pub -|- [set psxcnc(CMDPRE)]nukewipe psxc_nukewipe
+
+######################## End Configuration ################################
+###########################################################################
 
 proc psxc_nukewipe {nick uhost hand chan argv} {
     global psxcnc

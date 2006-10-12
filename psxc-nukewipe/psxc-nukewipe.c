@@ -117,8 +117,8 @@ if ((unsigned)argc == cnt1 || !strcmp(argv[cnt1],"--help") || strlen(argv[cnt1])
 	printf("\nUsage:   psxc-nukewipe <hours> [path]\n");
 	printf("         hours : nuked dirs older than <hours> hours will be wiped.\n");
 	printf("         path  : (minimum) path to match (optional).\n");
-	printf("Example: psxc-nukewipe 72 /site/incoming/0DAY  <- will remove nukes in 0day older than 3 days.\n");
-	printf("Example: psxc-nukewipe 72 */0DAY/*             <- will remove nukes in 0day older than 3 days.\n\n");
+	printf("Example: psxc-nukewipe 72 /site/incoming/0DAY/ <- will remove nukes in 0DAY older than 3 days.\n");
+	printf("Example: psxc-nukewipe 72 */0DAY/*             <- will remove nukes in 0DAY older than 3 days.\n\n");
 	return 0;
 }
 
