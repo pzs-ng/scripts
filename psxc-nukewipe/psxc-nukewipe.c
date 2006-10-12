@@ -114,11 +114,13 @@ if (argc > 1 && !strcmp(argv[1],"--test")) {
 }
 
 if ((unsigned)argc == cnt1 || !strcmp(argv[cnt1],"--help") || strlen(argv[cnt1]) == 0 || !(argv[cnt1][0] >= '0' && argv[cnt1][0] <= '9')) {
-	printf("\nUsage:   psxc-nukewipe <hours> [path]\n");
-	printf("         hours : nuked dirs older than <hours> hours will be wiped.\n");
-	printf("         path  : (minimum) path to match (optional).\n");
-	printf("Example: psxc-nukewipe 72 /site/incoming/0DAY/ <- will remove nukes in 0DAY older than 3 days.\n");
-	printf("Example: psxc-nukewipe 72 */0DAY/*             <- will remove nukes in 0DAY older than 3 days.\n\n");
+	printf("\nUsage:   psxc-nukewipe [--test|--help] <hours> [path]\n");
+	printf("         hours  : nuked dirs older than <hours> hours will be wiped.\n");
+	printf("         path   : (minimum) path to match (optional).\n");
+	printf("\nExamples: psxc-nukewipe 72 /site/incoming/0DAY/ <- remove nukes in 0DAY older than 3 days.\n");
+	printf("          psxc-nukewipe 72 */0DAY/*             <- remove nukes in 0DAY older than 3 days.\n");
+	printf("          psxc-nukewipe --test 5                <- fake a nukewipe of anything older than 5 hours.\n");
+	printf("          psxc-nukewipe --help                  <- this screen.\n\n");
 	return 0;
 }
 
