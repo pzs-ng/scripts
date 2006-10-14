@@ -1,5 +1,5 @@
 /* 
- * psxc-nukewipe v0.2
+ * psxc-nukewipe v0.3
  * ==================
  * Small script/binary to help remove nuked releases. May be used as a channel
  * command (!nukewipe) or as a crontabbed script.
@@ -59,8 +59,12 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <fnmatch.h>
+#include <sys/resource.h>
+#include <ftw.h>
+
 
 int get_dirage(time_t);
+int rmnuke(const char *name, const struct stat *status, int type, struct FTW *ftw_stat);
 
 struct nukelog {
         ushort status;          /* 0 = NUKED, 1 = UNNUKED */
@@ -87,6 +91,21 @@ int get_dirage(time_t dirtime) {
 	return hours;
 }
 
+int rmnuke(const char *name, const struct stat *status, int type, struct FTW *ftw_stat) {
+	int retval = 0;
+	if(type == FTW_NS)
+		return 0;
+
+	if(type == FTW_F || type == FTW_SL)
+		if ((retval = unlink(name)) == -1)
+			printf("Error: Failed to unlink %s (perms: 0%3o): %s\n", name, status->st_mode&0777, strerror(errno));
+ 
+	if(type == FTW_DP && strcmp(".", name))
+		if ((retval = rmdir(name)) == -1)
+			printf("Error: Failed to rmdir %s (perms: 0%3o): %s\n", name, status->st_mode&0777, strerror(errno));
+	return retval;
+}
+
 int main(int argc, char *argv[]) {
 FILE *file, *file2;
 uid_t oldid = geteuid();
@@ -96,19 +115,19 @@ char nukelog[MAXPATHLEN];
 char gllog[MAXPATHLEN];
 char nukeddir[MAXPATHLEN];
 char mindir[MAXPATHLEN];
-char rmcommand[12];
 struct nukelog nukeentry;
 struct stat st;
-unsigned int minhours, cnt1, cnt2;
+unsigned int minhours, cnt1, cnt2, testmode = 0;
+int retval = 0;
 char *p = NULL, *q = NULL;
 time_t timenow;
 
+setpriority(PRIO_PGRP, 0, 20);  // set as low priority as possible.
 if (argc > 1 && !strcmp(argv[1],"--test")) {
-	strncpy(rmcommand, "echo rm -fR", sizeof(rmcommand));
+	testmode = 1;
 	cnt1 = 2;
 	cnt2 = 3;
 } else {
-	strncpy(rmcommand, "rm -fR", sizeof(rmcommand));
 	cnt1 = 1;
 	cnt2 = 2;
 }
@@ -135,15 +154,17 @@ if (mindir[strlen(mindir) - 1] == '/' && strlen(mindir) < (sizeof(mindir) - 1)) 
 	mindir[strlen(mindir)] = '*';
 }
 
-seteuid(0);
+if (seteuid(0) == -1)
+	printf("Error: Failed to change uid: %s\n", strerror(errno));
+
 snprintf(nukelog, sizeof(nukelog), "/%s/%s", GLROOT, NUKELOG);
 if ((file = fopen(nukelog, "rb")) == NULL) {
-	printf("Unable to open (read) %s: %s\n",nukelog, strerror(errno));
+	printf("Error: Unable to open (read) %s: %s\n",nukelog, strerror(errno));
 	return 1;
 }
 snprintf(gllog, sizeof(gllog), "/%s/%s", GLROOT, GLLOG);
 if ((file2 = fopen(gllog, "ab")) == NULL) {
-	printf("Unable to open (append) %s: %s\n",gllog, strerror(errno));
+	printf("Error: Unable to open (append) %s: %s\n",gllog, strerror(errno));
 	fclose(file);
 	return 1;
 }
@@ -174,14 +195,19 @@ while(!feof(file)) {
 				timenow = time(NULL);
 				fprintf(file2, "%.24s %s \"%s/%s%s\" \"%s\" \"%.2f\"\n", ctime(&timenow), PREFIX, p, NUKESTRING, q, q, nukeentry.bytes);
 			} else {
-				printf("Unable to open (append) %s: %s\n",gllog, strerror(errno));
+				printf("Error: Unable to open (append) %s: %s\n",gllog, strerror(errno));
 				fclose(file);
 				return 1;
 			}
 			fclose(file2);
-			snprintf(temp2, sizeof(temp2), "%s %s", rmcommand, nukeddir);
-			if (system(temp2) == -1)
-				printf("Error: failed to execute %s : %s\n", temp2, strerror(errno));
+			if (!testmode) {
+				retval = nftw(nukeddir, rmnuke, 1, FTW_DEPTH|FTW_PHYS|FTW_MOUNT);
+				if (retval == -1)
+					printf("Error: Failed to rm -fR %s : %s\n", nukeddir, strerror(errno));
+				else if (retval)
+					printf("Error: Failed to rm -fR %s : Unable to traverse dir.\n", nukeddir);
+			}else
+				printf("rm -fR %s\n", nukeddir);
 		}
 
 	}
