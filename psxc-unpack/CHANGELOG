@@ -10,6 +10,7 @@ v1.1 - Fixed a bug when extracting from subdirs - if the rarfile(s) in a subdir
        to remove files that was not there. We don't care about that.
 v1.2 - Fixed an issue regarding files/dirs with spaces - seen especially if the
        complete-dir had spaces, and was suppoesed t obe removed after unpack.
+v1.3 - Fixed more issues regarding spaces in dirnames.
 
 // psxc(c)2006
 

@@ -143,7 +143,7 @@ if ((unsigned)argc == cnt1 || !strcmp(argv[cnt1],"--help") || strlen(argv[cnt1])
 	return 0;
 }
 
-minhours = atoi(argv[cnt1]);
+minhours = (int)strtol(argv[cnt1], (char **)NULL, 10);
 if ((unsigned int)argc > cnt2)
 	strncpy(mindir, argv[cnt1 + 1], sizeof(mindir));
 else

@@ -37,7 +37,7 @@
 #   set variables(NWIPE)        "%pf %releasename %size"
 #
 # in default.zst (or whatever theme you use), add the following:
-#   announce.WIPE             = "[%b{nwipe }][%section] %b{%relname} (%b{%size}MB) got wiped."
+#   announce.NWIPE            = "[%b{nwipe }][%section] %b{%relname} (%b{%size}MB) got wiped."
 #
 # -----------------------------------------------------------------------------
 #

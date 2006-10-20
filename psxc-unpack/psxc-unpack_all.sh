@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# psxc-unpack_all.sh v1.2 (c) psxc//2006
+# psxc-unpack_all.sh v1.3 (c) psxc//2006
 ########################################
 #
 # This here is an addon to psxc-unpack.sh.
@@ -50,27 +50,27 @@ MAGICWORD="now"
 ################################################################
 
 RDIR=""
-[[ -d $GLROOT/site ]] && RDIR=$GLROOT
-[[ -e $RDIR/$UNPACK_CONF ]] && source $RDIR/$UNPACK_CONF
+[[ -d "$GLROOT/site" ]] && RDIR="$GLROOT"
+[[ -e "$RDIR/$UNPACK_CONF" ]] && source "$RDIR/$UNPACK_CONF"
 RDIR=""
 init_dir=$(echo $SEARCH_DIRS | tr ' ' '\n' | head -n 1)
-[[ -d $GLROOT/$init_dir ]] && RDIR=$GLROOT
-[[ ! -e $RDIR/$LOGFILE ]] && :>$RDIR/$LOGFILE && chmod 666 $RDIR/$LOGFILE
+[[ -d "$GLROOT/$init_dir" ]] && RDIR="$GLROOT"
+[[ ! -e "$RDIR/$LOGFILE" ]] && :>"$RDIR/$LOGFILE" && chmod 666 "$RDIR/$LOGFILE"
 for sdir in $SEARCH_DIRS; do
   echo -e "\nscanning $sdir ...."
-  for fdir in $RDIR/$sdir/*; do
-    find "$fdir" -name "$COMPLETE_DIR" >$RDIR/$LOGFILE.tmp && chmod 666 $RDIR/$LOGFILE.tmp
+  for fdir in "$RDIR/$sdir/"*; do
+    find "$fdir" -name "$COMPLETE_DIR" >"$RDIR/$LOGFILE.tmp" && chmod 666 "$RDIR/$LOGFILE.tmp"
     while read -a "mdir"; do
-      echo $(dirname "$mdir") | tr -s '/' | sed "s|$RDIR||" | grep -v "$NUKED_DIRS" >>$RDIR/$LOGFILE
+      echo $(dirname "$mdir") | tr -s '/' | sed "s|$RDIR||" | grep -v "$NUKED_DIRS" >>"$RDIR/$LOGFILE"
       echo "FOUND: $(dirname "$mdir" | tr -s '/' | grep -v "$NUKED_DIRS" | sed "s|$RDIR||" )"
-    done < $RDIR/$LOGFILE.tmp
-    rm $RDIR/$LOGFILE.tmp
+    done < "$RDIR/$LOGFILE.tmp"
+    rm "$RDIR/$LOGFILE.tmp"
   done
 done
 echo "done scanning."
 [[ $RUNNOW -ne 0 ]] && {
   echo "running psxc-unpack.sh - this could take a while."
-  $RDIR/$UNPACK $MAGICWORD
+  "$RDIR/$UNPACK" $MAGICWORD
   echo "done."
 }
 

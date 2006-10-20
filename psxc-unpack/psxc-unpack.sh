@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# psxc-unpack.sh v1.2 (c) psxc//2006
+# psxc-unpack.sh v1.3 (c) psxc//2006
 ####################################
 #
 # This simple little thingy extracts files in a dir and removes the
@@ -124,30 +124,30 @@ RDIR=""
 }
 [[ "$(echo "$MAGICWORD" | tr 'A-Z' 'a-z')" == "$(echo "$1" | tr 'A-Z' 'a-z')" ]] && RUN_NOW=1
 [[ $RUN_NOW -ne 1 && ! -e $GLROOT/$LOGFILE && -e $SITEDIR ]] && exit 0
-[[ -z "$(cat $RDIR/$LOGFILE)" ]] && rm $RDIR/$LOGFILE && exit 0
-[[ -e $RDIR/$LOGFILE.pid ]] && {
-  oldpid=$(cat $RDIR/$LOGFILE.pid)
+[[ -z "$(cat $RDIR/$LOGFILE)" ]] && rm "$RDIR/$LOGFILE" && exit 0
+[[ -e "$RDIR/$LOGFILE.pid" ]] && {
+  oldpid=$(cat "$RDIR/$LOGFILE.pid")
   for pid in $(ps ax | awk '{print $1}'); do
     [[ $pid -eq $oldpid ]] && exit 0
   done
 }
-echo $$ >$RDIR/$LOGFILE.pid && chmod 666 $RDIR/$LOGFILE.pid
-:>$RDIR/$LOGFILE.complete && chmod 666 $RDIR/$LOGFILE.complete
+echo $$ >"$RDIR/$LOGFILE.pid" && chmod 666 "$RDIR/$LOGFILE.pid"
+:>"$RDIR/$LOGFILE.complete" && chmod 666 "$RDIR/$LOGFILE.complete"
 while [ 1 ]; do
-  :>$RDIR/$LOGFILE.tmp && chmod 666 $RDIR/$LOGFILE.tmp
-  [[ -z "$(cat $RDIR/$LOGFILE)" ]] && break
-  DNAME=$(head -n 1 $RDIR/$LOGFILE)
-  [[ ! -d $RDIR/$DNAME ]] && {
-    grep -v "$DNAME$" $RDIR/$LOGFILE > $RDIR/$LOGFILE.tmp
-    mv $RDIR/$LOGFILE.tmp $RDIR/$LOGFILE
+  :>"$RDIR/$LOGFILE.tmp" && chmod 666 "$RDIR/$LOGFILE.tmp"
+  [[ -z "$(cat "$RDIR/$LOGFILE")" ]] && break
+  DNAME="$(head -n 1 $RDIR/$LOGFILE)"
+  [[ ! -d "$RDIR/$DNAME" ]] && {
+    grep -v "$DNAME$" "$RDIR/$LOGFILE" > "$RDIR/$LOGFILE.tmp"
+    mv "$RDIR/$LOGFILE.tmp" "$RDIR/$LOGFILE"
     continue
   }
   while [ 2 ]; do
-    :>$RDIR/$LOGFILE.tmp && chmod 666 $RDIR/$LOGFILE.tmp
+    :>"$RDIR/$LOGFILE.tmp" && chmod 666 "$RDIR/$LOGFILE.tmp"
     EXTRACTNAME=""
-    [[ ! -e $RDIR/$DNAME ]] && break
-    ls -1 $RDIR/$DNAME >$RDIR/$LOGFILE.tmp
-    cd $RDIR/$DNAME
+    [[ ! -e "$RDIR/$DNAME" ]] && break
+    ls -1 "$RDIR/$DNAME" >"$RDIR/$LOGFILE.tmp"
+    cd "$RDIR/$DNAME"
     while read -a FNAME; do
       for FTYPE in $FILETYPES; do
         [[ ! -z "$(echo $FNAME | grep $FTYPE)" ]] && EXTRACTNAME=$FNAME
@@ -161,39 +161,39 @@ while [ 1 ]; do
         [[ $skip_archive -eq 1 ]] && $RM $EXTRACTNAME && EXTRACTNAME=""
         [[ $skip_archive -ne 1 ]] && break
       }
-    done < $RDIR/$LOGFILE.tmp
-    rm $RDIR/$LOGFILE.tmp
-    :>$RDIR/$LOGFILE.tmp && chmod 666 $RDIR/$LOGFILE.tmp
-    grep -v "$DNAME$" $RDIR/$LOGFILE > $RDIR/$LOGFILE.tmp
-    mv $RDIR/$LOGFILE.tmp $RDIR/$LOGFILE
+    done < "$RDIR/$LOGFILE.tmp"
+    rm "$RDIR/$LOGFILE.tmp"
+    :>"$RDIR/$LOGFILE.tmp" && chmod 666 "$RDIR/$LOGFILE.tmp"
+    grep -v "$DNAME$" "$RDIR/$LOGFILE" > "$RDIR/$LOGFILE.tmp"
+    mv "$RDIR/$LOGFILE.tmp" "$RDIR/$LOGFILE"
     [[ -z "$EXTRACTNAME" ]] && break
     SMATCH=0
     for SUBDIR in $SUBDIRS; do
-      [[ ! -z "$(basename $DNAME | grep -e "$SUBDIR")" ]] && SMATCH=1 && break
+      [[ ! -z "$(basename "$DNAME" | grep -e "$SUBDIR")" ]] && SMATCH=1 && break
     done
     [[ $SMATCH -eq 1 ]] && PARENT="../" || PARENT=""
     $UNRAR "$EXTRACTNAME" #$PARENT
     RET=$?
     UNPACKERR="$(echo "$UNPACKERROR" | tr '/\$\\\&\ ' '_' | sed "s|%%|$EXTRACTNAME|")"
     [[ $RET -eq 0 ]] && {
-      echo $RDIR/$DNAME >>$RDIR/$LOGFILE.complete
-      ls -1 $RDIR/$DNAME >$RDIR/$LOGFILE.tmp && chmod 666 $RDIR/$LOGFILE.tmp
+      echo "$RDIR/$DNAME" >>"$RDIR/$LOGFILE.complete"
+      ls -1 "$RDIR/$DNAME" >"$RDIR/$LOGFILE.tmp" && chmod 666 "$RDIR/$LOGFILE.tmp"
       DELME=""
       while read -a FNAME; do
-        [[ ! -z "$(echo $FNAME | grep -e "\.[Ss][Ff][Vv]$")" && -e $FNAME ]] && {
-          [[ ! -z "$(grep -ir "$EXTRACTNAME" $FNAME)" ]] && {
-            for DELME in $(cat $FNAME | grep -v "^;"); do
-              [[ -f $(find ./ -iname $DELME) ]] && $RM $(find ./ -iname $DELME)
+        [[ ! -z "$(echo "$FNAME" | grep -e "\.[Ss][Ff][Vv]$")" && -e "$FNAME" ]] && {
+          [[ ! -z "$(grep -ir "$EXTRACTNAME" "$FNAME")" ]] && {
+            for DELME in $(cat "$FNAME" | grep -v "^;"); do
+              [[ -f $(find ./ -iname "$DELME") ]] && $RM $(find ./ -iname "$DELME")
             done
             $RM "$FNAME" && break
           }
         }
-      done < $RDIR/$LOGFILE.tmp
-      rm $RDIR/$LOGFILE.tmp
+      done < "$RDIR/$LOGFILE.tmp"
+      rm "$RDIR/$LOGFILE.tmp"
       [[ -z "$DELME" ]] && {
-        num_dots=$(echo $EXTRACTNAME | tr -cd '\.' | wc -c | tr -cd '0-9')
+        num_dots=$(echo "$EXTRACTNAME" | tr -cd '\.' | wc -c | tr -cd '0-9')
         while [ $num_dots -gt 0 ]; do
-          partial="$(echo $EXTRACTNAME | cut -d '.' -f 1-$num_dots)"
+          partial="$(echo "$EXTRACTNAME" | cut -d '.' -f 1-$num_dots)"
           [[ "$partial" =~ "[Pp][Aa][Rr][Tt][0-9]*" || "$partial" =~ "[Rr0-9][Aa0-9][Rr0-9]$" ]] || break
           let num_dots-=1
         done
@@ -209,16 +209,16 @@ while [ 1 ]; do
       }
       [[ ! -z "$PARENT" ]] && {
         CHECKSUB=$(find ./ -name *.[Rr0-9][Aa0-9][Rr0-9] | tr -cd 'A-Za-z0-9')
-        [[ -z "$CHECKSUB" ]] && mv ./* ../ && $RMDIR $PWD
+        [[ -z "$CHECKSUB" ]] && mv ./* ../ && $RMDIR "$PWD"
       }
-      [[ ! -e $RDIR/$DNAME ]] && break
-      [[ $(ls -1 $RDIR/$DNAME | grep -v "^\ " | grep -v "^\." | grep -v "$COMPLETEDIR" | grep -v "$UNPACKERR" | wc -l) -eq 0 ]] && $RMDIR $RDIR/$DNAME
+      [[ ! -e "$RDIR/$DNAME" ]] && break
+      [[ $(ls -1 "$RDIR/$DNAME" | grep -v "^\ " | grep -v "^\." | grep -v "$COMPLETEDIR" | grep -v "$UNPACKERR" | wc -l) -eq 0 ]] && $RMDIR "$RDIR/$DNAME"
     }
     RETMODE=$RET
     [[ $RET -ne 0 ]] && {
       echo "Error in archive $RDIR/$DNAME/$EXTRACTNAME - skipping this dir."
-#      [[ "$UNPACKERR" != "" ]] && :>$RDIR/$DNAME/$PARENT/"$UNPACKERR" && chmod 666 $RDIR/$DNAME/$PARENT/"$UNPACKERR"
-      [[ "$UNPACKERR" != "" ]] && :>$RDIR/$DNAME/"$UNPACKERR" && chmod 666 $RDIR/$DNAME/"$UNPACKERR"
+#      [[ "$UNPACKERR" != "" ]] && :>"$RDIR/$DNAME/$PARENT/$UNPACKERR" && chmod 666 "$RDIR/$DNAME/$PARENT/$UNPACKERR"
+      [[ "$UNPACKERR" != "" ]] && :>"$RDIR/$DNAME/$UNPACKERR" && chmod 666 "$RDIR/$DNAME/$UNPACKERR"
       break
     }
     [[ ! -z "$(echo $RM | grep "echo")" ]] && echo "running in testmode - unable to test for more than one release in the dir w/o going into endless loop. breaking." && break
@@ -229,10 +229,10 @@ done
 [[ $CHMOD_DIRS -eq 1 && $RET -eq 0 ]] && {
   while read -a CDIR; do
     [[ -d "$CDIR" ]] && chmod 555 "$CDIR"
-  done < $RDIR/$LOGFILE.complete
+  done < "$RDIR/$LOGFILE.complete"
 }
-[[ -e $RDIR/$LOGFILE ]] && rm $RDIR/$LOGFILE
-[[ -e $RDIR/$LOGFILE.tmp ]] && rm $RDIR/$LOGFILE.tmp
-[[ -e $RDIR/$LOGFILE.complete ]] && rm $RDIR/$LOGFILE.complete
-[[ -e $RDIR/$LOGFILE.pid ]] && rm $RDIR/$LOGFILE.pid
+[[ -e "$RDIR/$LOGFILE" ]] && rm "$RDIR/$LOGFILE"
+[[ -e "$RDIR/$LOGFILE.tmp" ]] && rm "$RDIR/$LOGFILE.tmp"
+[[ -e "$RDIR/$LOGFILE.complete" ]] && rm "$RDIR/$LOGFILE.complete"
+[[ -e "$RDIR/$LOGFILE.pid" ]] && rm "$RDIR/$LOGFILE.pid"
 
