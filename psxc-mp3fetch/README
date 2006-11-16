@@ -1,0 +1,19 @@
+# psxc-mp3fetch v0.1
+# ==================
+#
+# A small, simple util to read the id3 header of a mp3 and give you the info.
+# Meant to be used in conjunction with prescripts etc that do not have the
+# ability to fetch the id3 header themselves.
+#
+# To compile: gcc -W -Wall -O2 -static -g -o /glftpd/bin/psxc-mp3fetch mp3fetch.c
+#
+# Usage: psxc-mp3fetch /path/to/filename.mp3
+#
+# Output: <name of artist>|<name of title>|<name of album>|<year>|<genre>|<bitrate>|<cbr or vbr>
+#
+# How to grab the information you want is up to you.
+# As an example, here's how to extract the genre in bash:
+#
+# > psxc-mp3fetch /path/to/filename.mp3 | cut -d '|' -f 5
+#
+
