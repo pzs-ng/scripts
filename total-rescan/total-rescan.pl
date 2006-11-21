@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############## ############## ############## ############## ############## ######## #### ## #
 # total-rescan (c) daxxar ^ team pzs-ng <daxxar@daxxar.com> 
-#  - version 1.4
+#  - version 1.5rc1
 #
 
 #.########################################################################,
@@ -48,9 +48,10 @@
 #  ! outputs statistics on how many dirs were resorted, and on each dir sorted.
 #  ! retabbed the whole script to proper retab.
 #  + added vim modeline <3
-#  + $defaultroot variable can now be used to set the default glroot if none is specified on the cmldine.
+#  + $defaultroot variable can now be used to set the default glroot if none is specified on the cmdline.
 #    (default is /glftpd)
 #  ! made output-matching from rescan a bit more friendly.
+#  + added $skipmatch variable, dirs are checked against this before recursed into and possibly rescanned. ;-)
 #
 #  from 1.3
 #  ! now chmods the rmscript to 755.
@@ -126,6 +127,9 @@ my $audiosort = '/bin/audiosort';   # This defines what bin we use instead of /b
 
 my $defaultroot = '/glftpd';        # This defines what total-rescan uses for glroot if nothing is set on the commandline.
 
+my $skipmatch = '^(?:NUKED|\(NUKED\))-';    # Regular expression that directories are checked against before rescanning or 
+                                            # recursing into them. If they match, they're SKIPPED.
+
 
 ######    NOTICE
 #### Below here should not be changed (unless you're hacking this script, or fixing a bug). :)
@@ -158,7 +162,7 @@ sub isscandir {
         print STDERR "- Opening directory '$dir' for reading failed, skipping! ($!)\n";
         return 0;
     }
-        
+
     while (($_ = readdir(TARGETDIR))) {
         if (/^\./ || -d "$_") { next; }
         if (!$onlysort && /\.sfv$/i) {
@@ -201,7 +205,7 @@ sub rescandir {
         my ($passed, $total) = (-1, -1);
         if ($output =~ /Passed\s*[:=]?\s*(\d+)\s*$/mi) { $passed = $1; }
         if ($output =~ /Total\s*[:=]?\s*(\d+)\s*$/mi) { $total = $1; }
-        
+
         if ($passed == -1 || $total == -1) {
             print STDERR "- ERROR! Output from $rescan on '$dir' was unparseable. (Nonstandard rescan binary?)\n";
             $retval = 0;
@@ -217,7 +221,7 @@ sub rescandir {
             }
             $retval = 0;
         }
-        
+
         utime($atime, $mtime, '.') if $preservestamp;
     }
     chdir('/');
@@ -268,17 +272,19 @@ while (my $cdir = scalar glob $path) {
 
         while (($_ = readdir(DIR))) {
             my $tdir = "$dir/$_";
-            if (/^\./ || ! -d $tdir) { next; }
+            next if /$skipmatch/oi;
+            next if /^\./ or not -d $tdir;
+
             unshift(@dirs, "$tdir"); 
 
             if (isscandir($tdir)) {
-                ++$scanneddirs;
                 print "+ RESORTING: $tdir\n" if $onlysort and $printeach;
                 if (rescandir($tdir)) {
                     ++$gooddirs;
                 } else {
                     ++$baddirs;
                 }
+                ++$scanneddirs;
             }
         }
         closedir(DIR);
