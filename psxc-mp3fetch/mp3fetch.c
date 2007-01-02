@@ -433,8 +433,17 @@ main(int argc, char **argv) {
 	if (argc > 1) {
 		audio = malloc(sizeof(struct audio));
 		get_mp3_info(argv[1], audio);
+		setenv("ID3_ARTIST", audio->id3_artist, 1);
+		setenv("ID3_TITLE", audio->id3_title, 1);
+		setenv("ID3_ALBUM", audio->id3_album, 1);
+		setenv("ID3_YEAR", audio->id3_year, 1);
+		setenv("ID3_GENRE", audio->genre, 1);
+		setenv("ID3_BITRATE", audio->bitrate, 1);
+		setenv("ID3_TYPE", audio->is_vbr?"VBR":"CBR", 1);
+
 		printf("%s|%s|%s|%s|%s|%s|%s\n", audio->id3_artist, audio->id3_title, audio->id3_album, audio->id3_year, audio->genre, audio->bitrate, audio->is_vbr?"VBR":"CBR");
 		free(audio);
+		printf("ID3_GENRE=%s\n", getenv("ID3_GENRE"));
 	}
 	return 0;
 }
