@@ -58,8 +58,8 @@ EXCLUDES="
 ^\_
 "
 
-# Where is glftpd/site installed?
-GLROOT=/glftpd/site
+# Where is glftpd installed?
+GLROOT=/glftpd
 
 # Where can i store some tempfiles?
 TMPDIR=/tmp
