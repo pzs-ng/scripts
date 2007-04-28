@@ -1,0 +1,48 @@
+dds.pl (c) daxxar <daxxar@daxxar.com>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Readme:
+~ ~ ~ ~
+
+This is a (simple) DayStats script for glftpd, written in perl.
+(dds = dax Daystats Script or dax DayStats, originally the latter)
+
+Its originally made for zs-c's sitebot, but can be made to fit any
+sitebot easily. I've tried to make it as costumizable as possible,
+and as easy to config as possible without breaking costumizability.
+You should not have a need to edit script, and dont whine to me if
+you do it unless you are competent enough to know what you are doing
+when/if you break it ;)
+
+It only requires two modules, Data::Dumper and FindBin, both which 
+should be included in your perl distribution :)
+
+Installing:
+~~~~~~~~~~~
+1) Put it in a nice dir (f.x. /glftpd/bin/) together with .conf (cp dds.* /glftpd/bin/)
+2) Chmod it to eXecutable (chmod 750 /glftpd/bin/dds.pl)
+2) Edit dds.conf and read comments carefully
+3) Run it with debug to see if its working (/glftpd/bin/dds.pl debug)
+4) Add announce to sitebot output (see below for dZSbot.tcl)
+5) Add it to crontab, something like "9 23 * * * /glftpd/bin/dds.pl" (crontab -e)
+
+(dZSbot.tcl:
+add "DSTATS" to msgtypes(DEFAULT)
+set disable(DSTATS) 0
+set variables(DSTATS) "%msg"
+set announce(DSTATS) "(\002DSTATS\002) %msg" (change to what you want)
+and rehash it :-)
+
+Running it:
+~~~~~~~~~~~
+Run it with parameter "debug" to run it in "debug mode", which displays
+config options and shows output to screen INSTEAD of to bot, or run it
+with a regex date to match that date instead of this. 
+(f.x. say Jan 01 2003, you can specify one or all parameters, in any order,
+ but month = 3 letters, date = 1 or 2 digits and year = 4 digits)
+(Debug mode does *not* write anything to file, and does *not* parse %c & %b)
+
+
+Contact me via email (daxxar@daxxar.com) if you have feedback and I'll
+probably respond :) (i. e. find bugs, want features, criticism)
+(Btw, my code is horrible, I know!)

@@ -1,0 +1,65 @@
+dds.pl (c) daxxar <daxxar@daxxar.com>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Changelog:
+~ ~ ~ ~ ~
+
+v0.4 (2006-05-09)
++ cookies for date and time
++ option to make upload-stats not include nuked uploads (subnuked)
+! outputs '0' or '0b' instead of '?'
+! indented code properly. :-P
+* supports new syntax for nukes (now counts nukes)
+
+// Old CHANGELOG said: 
+// the 0.3x fixes are just merging of my current code with old code
+// while the rewrite is being done. released in quick succession.
+// 
+// This is no longer the case, as I cannot find the codebase that I was working on.
+
+v0.3f
+! Updated CHANGELOG with info about (non-existant) recode.
+* Fixed a warning that shouldn't matter, a wasted line of code.
+v0.3e (temporary release, recode of some stuff is going on)
+* README was a bit lacking on info about what this script did ;)
+v0.3d (temporary release, recode of some stuff is going on)
+* config file not in path script is run from bug
+v0.3c (temporary release, recode of some stuff is going on)
+* day of month < 10 on cmd line parameter fixed (gah, stupid me)
+v0.3b (temporary release, recode of some stuff is going on)
+* day of month < 10 bug fixed :) (thanks for letting me now, xoLax)
+v0.3
+* log-path bug, sowwy.
+
+v0.2
++ exclude path for all xfer stats
+  (replace your conf-line named hash.regex.xfer-stats
+  and add the one(s) named array.noxferpaths)
++ examples of cookies
+* cleaned up config (greatly)
+* various errors in docs
+* removed some debug output to ~/debug.log, whoopsie =)
+
+v0.1
++ inital release
+
+Todo:
+~ ~ ~
+
+for v0.4
+[ ] ! regexes in config to simplified regexes
+
+for v0.3
+[ ] + top speed
+[ ] + slowest speed
+[ ] * unspecified options
+
+key   description
+ +    added
+ -    removed
+ *    bugfix
+ !    change
+[ ]   not done (TODO)
+[x]   done (TODO)
+(please, report bugs and / or send feature requests to daxxar@daxxar.com)
+
