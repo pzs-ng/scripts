@@ -28,7 +28,7 @@ for my $arg (@ARGV) {
 
 # This is for what to read from config ^_^
 my %vars = ( 'postfix' => '', 'prefix' => '', 'glroot' => '/glftpd', 'subnuked' => 'no' );
-my %arrays = ( 'output' => [], 'noxferpaths' => [] );
+my %arrays = ( 'output' => [], 'noxferpaths' => [], 'exclude' => [] );
 my %hashes = ( 'logs' => {} , 'tags' => {} , 'regex' => {} );
 
 # This is the "tags" for different entries in
@@ -148,8 +148,8 @@ while (<LOGINS>) {
 close(LOGINS);
 
 # size of files leeched by user, size of files upped by user,
-# # of files leeched by user, # of files upped by user
-my (%leechersize, %uppersize, %leecherfiles, %upperfiles);
+# # of files leeched by user, # of files upped by user, user -> group lookup
+my (%leechersize, %uppersize, %leecherfiles, %upperfiles, %grouplookup);
 open(XFER, '<', $hashes{'logs'}{'xfer'}) 
   or equit "Can't open xfer-file ($hashes{'logs'}{'xfer'}) for reading!";
 
@@ -161,15 +161,18 @@ LINE: while (<XFER>) {
         my $bytes = $1; my $path = $2; my $io = $3;
         my $user = $4; my $group = $5;
         for my $skip (@{$arrays{'noxferpaths'}}) { next LINE if ($path =~ /^$skip/); }
+        for my $skipgroup (@{$arrays{'exclude'}}) { next LINE if ($group eq $skipgroup); }
+
+        $grouplookup{$user} = $group;
         if ($io eq 'i') {
-            $uppersize{"$user\@$group"} += $bytes;
+            $uppersize{$user} += $bytes;
             $stats{'usize'} += $bytes;
-            $upperfiles{"$user\@$group"}++;
+            $upperfiles{$user}++;
             $stats{'ufiles'}++;
         } elsif ($io eq 'o') {
-            $leechersize{"$user\@$group"} += $bytes;
+            $leechersize{$user} += $bytes;
             $stats{'lsize'} += $bytes; 
-            $leecherfiles{"$user\@$group"}++;
+            $leecherfiles{$user}++;
             $stats{'lfiles'}++;
         }
     }
@@ -194,8 +197,7 @@ while (<MAIN>) {
             my ($user, $kb) = ($1, $2);
             if (lc($vars{'subnuked'}) eq 'yes')
             {
-                my @users = grep (/^$user\@/, keys %uppersize);
-                $uppersize{$users[0]} -= $kb * 1024;
+                $uppersize{$user} -= $kb * 1024;
             }
 
             $nukees{$user} += ($kb * 1024);
@@ -211,8 +213,7 @@ while (<MAIN>) {
             my ($user, $kb) = ($1, $2);
             if (lc($vars{'subnuked'}) eq 'yes')
             {
-                my @users = grep (/^$user\@/, keys %uppersize);
-                $uppersize{$users[0]} += $kb * 1024;
+                $uppersize{$user} += $kb * 1024;
             }
 
             $nukees{$user} -= ($kb * 1024);
