@@ -2,8 +2,7 @@ dds.pl (c) daxxar <daxxar@daxxar.com>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Readme:
-~ ~ ~ ~
-
+~~~~~~~
 This is a (simple) DayStats script for glftpd, written in perl.
 (dds = dax Daystats Script or dax DayStats, originally the latter)
 
@@ -41,7 +40,6 @@ with a regex date to match that date instead of this.
 (f.x. say Jan 01 2003, you can specify one or all parameters, in any order,
  but month = 3 letters, date = 1 or 2 digits and year = 4 digits)
 (Debug mode does *not* write anything to file, and does *not* parse %c & %b)
-
 
 Contact me via email (daxxar@daxxar.com) if you have feedback and I'll
 probably respond :) (i. e. find bugs, want features, criticism)
