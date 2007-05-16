@@ -11,6 +11,7 @@ v0.5 (2007-xx-xx)
 + support for 'skipped groups' in stats (arrays.exclude) (thanks to fabL3)
 ! no longer uses user@group as key for various hashes.
  ^-- fix not done; need to add config-option to still show user@group in output, and not just user.
++ new cookie, %topnukec[x] - nukecount for the given user.
 
 v0.4 (2006-05-09)
 + cookies for date and time
