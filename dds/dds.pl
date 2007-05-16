@@ -200,8 +200,10 @@ while (<MAIN>) {
                 $uppersize{$user} -= $kb * 1024;
             }
 
-            $nukees{$user} += ($kb * 1024);
+            if (!defined($nukees{$user})) { $nukees{$user} = []; }
 
+            $nukees{$user}->[0] += ($kb * 1024);
+            $nukees{$user}->[1]++;
         }
         next;
     }
@@ -216,8 +218,11 @@ while (<MAIN>) {
                 $uppersize{$user} += $kb * 1024;
             }
 
-            $nukees{$user} -= ($kb * 1024);
-            if (int($nukees{$user}) == 0) { delete $nukees{$user} }
+            if (!defined($nukees{$user})) { $nukees{$user} = []; }
+
+            $nukees{$user}->[0] -= ($kb * 1024);
+            $nukees{$user}->[1]--;
+            if ($nukees{$user}->[1] == 0) { delete $nukees{$user} }
         }
         next;
     }
@@ -234,7 +239,7 @@ my @topli = reverse sort { $logins{$a} <=> $logins{$b} } keys %logins;
 my @toplo = reverse sort { $logouts{$a} <=> $logouts{$b} } keys %logouts;
 my @topto = reverse sort { $timeouts{$a} <=> $timeouts{$b} } keys %timeouts;
 my @toppre = reverse sort { $pres{$a} <=> $pres{$b} } keys %pres;
-my @topnuke = reverse sort { $nukees{$a} <=> $nukees{$b} } keys %nukees;
+my @topnuke = reverse sort { $nukees{$a}->[0] <=> $nukees{$b}->[0] } keys %nukees;
 
 foreach my $upper (keys %uppersize) {$uppersize{$upper} = from_byte($uppersize{$upper});}
 foreach my $leecher (keys %leechersize) {$leechersize{$leecher} = from_byte($leechersize{$leecher});}
@@ -277,7 +282,8 @@ foreach my $line (@{$arrays{'output'}}) {
     $line =~ s/(?<!%)%prec/defined $stats{'pres'} ? $stats{'pres'} : '0'/eg;
 
     $line =~ s/(?<!%)%topnuke\[(\d+)\]/defined $topnuke[$1-1] ? $topnuke[$1-1] : 'None'/eg;
-    $line =~ s/(?<!%)%topnukes\[(\d+)\]/(defined $topnuke[$1-1] && defined $nukees{$topnuke[$1-1]}) ? from_byte($nukees{$topnuke[$1-1]}) : '0b'/eg;
+    $line =~ s/(?<!%)%topnukes\[(\d+)\]/(defined $topnuke[$1-1] && defined $nukees{$topnuke[$1-1]}) ? from_byte($nukees{$topnuke[$1-1]}->[0]) : '0b'/eg;
+    $line =~ s/(?<!%)%topnukec\[(\d+)\]/(defined $topnuke[$1-1] && defined $nukees{$topnuke[$1-1]}) ? $nukees{$topnuke[$1-1]}->[1] : '0'/eg;
     $line =~ s/(?<!%)%nukec/defined $stats{'nukes'} ? $stats{'nukes'} : '0'/eg;
     $line =~ s/(?<!%)%unnukec/defined $stats{'unnukes'} ? $stats{'unnukes'} : '0'/eg;
 
