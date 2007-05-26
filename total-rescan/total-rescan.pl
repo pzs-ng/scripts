@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############## ############## ############## ############## ############## ######## #### ## #
 # total-rescan (c) daxxar ^ team pzs-ng <daxxar@daxxar.com> 
-#  - version 1.5rc1
+#  - version 1.5rc2
 #
 
 #.########################################################################,
@@ -52,6 +52,7 @@
 #    (default is /glftpd)
 #  ! made output-matching from rescan a bit more friendly.
 #  + added $skipmatch variable, dirs are checked against this before recursed into and possibly rescanned. ;-)
+#  * now skipping recursion into symlinks.
 #
 #  from 1.3
 #  ! now chmods the rmscript to 755.
@@ -137,7 +138,7 @@ my $skipmatch = '^(?:NUKED|\(NUKED\))-';    # Regular expression that directorie
 ## please contact the author, daxxar. He's reachable per IRC 
 # (nick daxxar) or mail (daxxar@daxxar.com). Thanks.
 
-my $version = '.4';
+my $version = '.5rc2';
 print "+ Starting total rescan v1$version by daxxar ^ team pzs-ng.\n";
 
 my $path = shift;
@@ -265,6 +266,7 @@ my @dirs;
 while (my $cdir = scalar glob $path) {
     my @dirs = ($cdir);
     while ((my $dir = shift @dirs)) {
+        next if -l $dir;
         if (!opendir(DIR, $dir)) {
             print STDERR "- Opening directory '$dir' for reading failed, skipping! ($!)\n";
             next;
