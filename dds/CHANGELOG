@@ -12,6 +12,8 @@ v0.5 (2007-xx-xx)
 ! no longer uses user@group as key for various hashes.
  ^-- fix not done; need to add config-option to still show user@group in output, and not just user.
 + new cookie, %topnukec[x] - nukecount for the given user.
++ new variable, var.nukesort. set to 'count' to sort %topnuke by count of nukes, and not size of nukes.
++ new tcl script for invoking it from channel (manually), !daystats
 
 v0.4 (2006-05-09)
 + cookies for date and time

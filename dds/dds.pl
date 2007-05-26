@@ -27,7 +27,7 @@ for my $arg (@ARGV) {
 }
 
 # This is for what to read from config ^_^
-my %vars = ( 'postfix' => '', 'prefix' => '', 'glroot' => '/glftpd', 'subnuked' => 'no' );
+my %vars = ( 'postfix' => '', 'prefix' => '', 'glroot' => '/glftpd', 'subnuked' => 'no', 'nukesort' => 'size' );
 my %arrays = ( 'output' => [], 'noxferpaths' => [], 'exclude' => [] );
 my %hashes = ( 'logs' => {} , 'tags' => {} , 'regex' => {} );
 
@@ -239,7 +239,12 @@ my @topli = reverse sort { $logins{$a} <=> $logins{$b} } keys %logins;
 my @toplo = reverse sort { $logouts{$a} <=> $logouts{$b} } keys %logouts;
 my @topto = reverse sort { $timeouts{$a} <=> $timeouts{$b} } keys %timeouts;
 my @toppre = reverse sort { $pres{$a} <=> $pres{$b} } keys %pres;
-my @topnuke = reverse sort { $nukees{$a}->[0] <=> $nukees{$b}->[0] } keys %nukees;
+my @topnuke;
+if ($vars{'nukesort'} eq 'count') {
+    @topnuke = reverse sort { $nukees{$a}->[1] <=> $nukees{$b}->[1] } keys %nukees;
+} else {
+    @topnuke = reverse sort { $nukees{$a}->[0] <=> $nukees{$b}->[0] } keys %nukees;
+}
 
 foreach my $upper (keys %uppersize) {$uppersize{$upper} = from_byte($uppersize{$upper});}
 foreach my $leecher (keys %leechersize) {$leechersize{$leecher} = from_byte($leechersize{$leecher});}
