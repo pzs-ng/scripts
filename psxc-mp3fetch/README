@@ -1,4 +1,4 @@
-# psxc-mp3fetch v0.1
+# psxc-mp3fetch v0.2
 # ==================
 #
 # A small, simple util to read the id3 header of a mp3 and give you the info.
@@ -7,9 +7,12 @@
 #
 # To compile: gcc -W -Wall -O2 -static -g -o /glftpd/bin/psxc-mp3fetch mp3fetch.c
 #
-# Usage: psxc-mp3fetch /path/to/filename.mp3
+# Usage: psxc-mp3fetch /path/to/filename.mp3 [1]
 #
-# Output: <name of artist>|<name of title>|<name of album>|<year>|<genre>|<bitrate>|<cbr or vbr>
+# Output CBR MODE: <name of artist>|<name of title>|<name of album>|<year>|<genre>|<bitrate>|<cbr or vbr>|<channel mode>|<sampling rate>|<codec>|<layer>|<channelmode>|<vbr/cbr>
+# Output VBR MODE: <name of artist>|<name of title>|<name of album>|<year>|<genre>|<bitrate>|<cbr or vbr>|<channel mode>|<sampling rate>|<codec>|<layer>|<channelmode>|<vbr/cbr>|<vbr version>|<vbr preset>|<vbr type>|<vbr quality>|<vbr minimum bitrate>|<vbr noiseshaping>|<vbr stereo mode>|<vbr unwise flag>|<vbr source>
+#
+# There is also a 'verbose' mode (the '1' flag at the end). This will put each variable on it's own line.
 #
 # How to grab the information you want is up to you.
 # As an example, here's how to extract the genre in bash:

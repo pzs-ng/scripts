@@ -1,6 +1,4 @@
 /*
- * Modified by psxc(C)2006
- *
  * mp3tech.h - Headers for mp3tech.c
  * 
  * Copyright (C) 2000-2001  Cedric Tefft <cedric@earthling.net>
@@ -35,6 +33,33 @@
 #include <sys/stat.h>
 #include <ctype.h>
 #include <string.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#ifndef PATH_MAX
+ #define _LIMITS_H_
+// #if defined(_SunOS_)
+//  #include <syslimits.h>
+// #elif defined(_BSD_)
+//  #include <sys/syslimits.h>
+// #else
+  #include <limits.h>
+//  #include <syslimits.h>
+// #endif
+#endif
+
+#ifndef PATH_MAX
+ #define PATH_MAX 1024
+ #define NAME_MAX 255
+ #define _ALT_MAX
+#endif
+
+#if NAME_MAX%4
+ #define NAMEMAX NAME_MAX+4-NAME_MAX%4
+#else 
+ #define NAMEMAX NAME_MAX
+#endif
 
 /*
  * MIN_CONSEC_GOOD_FRAMES defines how many consecutive valid MP3 frames we
@@ -44,24 +69,7 @@
 #define FRAME_HEADER_SIZE 4
 #define MIN_FRAME_SIZE 21
 #define NUM_SAMPLES 4
-
-struct audio {
-        char            id3_artist[31];
-        char            id3_title [31];
-        char            id3_album [31];
-        char            id3_year  [5];
-        char            bitrate   [5];
-        char            samplingrate[6];
-	char		genre[30];
-        char           *id3_genre;
-        char           *layer;
-        char           *codec;
-        char           *channelmode;
-        char            vbr_version_string[10];
-        char            vbr_preset[15];
-        int             is_vbr;
-};
-
+#define VERBOSE 0
 
 typedef struct {
 	unsigned int	sync;
@@ -104,6 +112,7 @@ typedef struct {
 	int		badframes;
 }		mp3info;
 
+/*
 int		get_header (FILE * file, mp3header * header);
 int		frame_length(mp3header * header);
 int		header_layer(mp3header * h);
@@ -117,3 +126,48 @@ char           *header_emphasis(mp3header * h);
 char           *header_mode(mp3header * h);
 int		get_first_header(mp3info * mp3, int startpos);
 int		get_next_header(mp3info * mp3);
+*/
+
+struct audio {
+	char		id3_artist[31];
+	char		id3_title [31];
+	char		id3_album [31];
+	char		id3_year  [5];
+	char		bitrate   [5];
+	char		samplingrate[6];
+	char           *id3_genre;
+	char           *layer;
+	char           *codec;
+	char           *channelmode;
+	char		vbr_version_string[10];
+	char		vbr_preset[15];
+	int		is_vbr;
+	char		vbr_oldnew[1];
+	int		vbr_quality;
+	int		vbr_minimum_bitrate;
+	int		vbr_noiseshaping;
+	char		vbr_stereo_mode[10];
+	char		vbr_unwise[4];
+	char		vbr_source[10];
+};
+
+/*
+struct VARS {
+	struct current_user user;
+	struct current_file file;
+	struct race_total total;
+	struct misc	misc;
+	struct audio	audio;
+	struct VIDEO	avinfo;
+	unsigned char	section;
+	char		sectionname[128];
+	char		headpath[PATH_MAX];
+	unsigned int	data_incrementor;
+	unsigned int	data_in_use;
+	unsigned int	data_queue;
+	unsigned int	data_type;
+	char		id3_artist[31];
+	char		id3_genre[31];
+};
+*/
+
