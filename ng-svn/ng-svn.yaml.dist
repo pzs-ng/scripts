@@ -1,0 +1,45 @@
+# These settings define how we operate on IRC.
+connection:
+    nick: pzs-ng
+    # Format is server:6667
+    server: irc.homelien.no:6667
+    # Format is '#channel,key'
+    channels:
+        - '#project-zs-ng,hidden_key_here'
+        - '#pzs-ng'
+    # Some commands are limited to admin channels, and 
+    # we automatically OP people who join other channels
+    # if they're in the admin channel.
+    adminchan: '#project-zs-ng'
+    realname: p-zs-ng - SVN Slave.
+    username: pzs-ng
+    # This is the ip it binds to for IRC
+    localaddr: 127.0.0.1
+
+# These settings define how we manage the SVN repositories that we watch.
+svn:
+    # How often we check for new changes in repositories.
+    polltime: 10
+    # Here are our repositories.
+    # Each repository is defined as:
+    # /path/to/repo:
+    #   - '#some-channel'
+    #   - '#other-channel'
+    #   - '#third-channel'
+    # And we announce to those three channels when it updates.
+    repositories:
+        /svn/pzs-ng:
+            - '#project-zs-ng'
+            - '#pzs-ng'
+        /svn/zspp:
+            - '#project-zs-ng'
+
+# This is the file that contains the quoets.
+quotesfile: /home/mybot/quotes
+# This is the config.yaml in the pzs-ng distribution, used
+# to allow for lookup of config options on IRC.
+zsconfig: /home/mybot/pzs-ng/configGen/config.yaml
+# Stores regular factoids.
+factsdb: factoids
+# Path to template-mirror, for syncing.
+template_mirror_path: /home/www/scripts/template-mirror/
