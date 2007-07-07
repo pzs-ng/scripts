@@ -16,34 +16,34 @@ use YAML;
 my $configFile = 'ng-svn.yaml';
 
 my @fact_reply = (
-        q/$fact is $factoid, $nick./,
-        q/$nick: '$fact' is '$factoid'/,
-        q/$nick, $fact -> $factoid/,
-        q/$nick, $fact is like, uh, $factoid, or something./,
-        q/Definition of $fact is $factoid. D-uh./,
-        q/$nick, I was told that $fact is $factoid. Cool, eh? :)/
+    q/$fact is $factoid, $nick./,
+    q/$nick: '$fact' is '$factoid'/,
+    q/$nick, $fact -> $factoid/,
+    q/$nick, $fact is like, uh, $factoid, or something./,
+    q/Definition of $fact is $factoid. D-uh./,
+    q/$nick, I was told that $fact is $factoid. Cool, eh? :)/
 );
 my @fact_added = (
-        q/Sure, $nick!/,
-        q/$nick, of course!/,
-        q/Whatever you say!/,
-        q/$nick: If that's your opinion!/,
-        q/Yep, that's affirmative./,
-        q/Okay, I'll remember about $fact :)/,
-       q/Yeah, I knew that! *cough cough* *shuffle*/
+    q/Sure, $nick!/,
+    q/$nick, of course!/,
+    q/Whatever you say!/,
+    q/$nick: If that's your opinion!/,
+    q/Yep, that's affirmative./,
+    q/Okay, I'll remember about $fact :)/,
+    q/Yeah, I knew that! *cough cough* *shuffle*/
 );
 my @fact_deleted = (
-       q/'tis already gone from my mind!/,
-       q/Okay, I'll try my best to forget about $fact! :)/,
-       q/Hmmm. What was that you said about $fact? ;-)/,
-       q/I'll remove $fact from my memory ASAP!/
+   q/'tis already gone from my mind!/,
+   q/Okay, I'll try my best to forget about $fact! :)/,
+   q/Hmmm. What was that you said about $fact? ;-)/,
+   q/I'll remove $fact from my memory ASAP!/
 );
 my @fact_unknown = (
-       q/Heh, $nick, I've never even HEARD about $fact!/,
-       q/Eh. $fact, you say? Can't seem to remember, $nick, sorry./,
-       q/$nick: Weeeell... You can't say $fact is common knowledge, atleast!/,
-       q/Uh uh, $nick, I don't know anything about $fact!/,
-       q/Whatyousay, $nick? $fact?/
+   q/Heh, $nick, I've never even HEARD about $fact!/,
+   q/Eh. $fact, you say? Can't seem to remember, $nick, sorry./,
+   q/$nick: Weeeell... You can't say $fact is common knowledge, atleast!/,
+   q/Uh uh, $nick, I don't know anything about $fact!/,
+   q/Whatyousay, $nick? $fact?/
 );
 
 # END #
@@ -94,7 +94,7 @@ sub get_readme_typestring {
 sub get_readme_default {
     my ($option, $zsconfig) = @_;
     if ($zsconfig->{options}->{$option}->{type} eq 'boolean') {
-        return $zsconfig->{options}->{$option}->{default} ? 'TRUE' : 'FALSE';
+        return ($zsconfig->{options}->{$option}->{default} =~ /^true$/i) ? 'TRUE' : 'FALSE';
     } else {
         return $zsconfig->{options}->{$option}->{default};
     }
@@ -688,7 +688,7 @@ sub irc_public {
             if (@config) {
                 for my $key (@config) {
                     my $message = "\002$key\002 <" . get_readme_typestring($key, $heap->{zsconfig});
-                    $message .= ' = "'. get_readme_default($key, $heap->{zsconfig}) .'"> ';
+                    $message .= " = \002". get_readme_default($key, $heap->{zsconfig}) ."\002> ";
                     $message .= join(' ', split(/[\r\n]+/, $heap->{zsconfig}->{options}->{$key}->{comment}));
                     $kernel->post($sender => 'privmsg' => $target => ($arg || $from) . ': ' . $message);
                 }
