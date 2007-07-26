@@ -530,7 +530,7 @@ sub irc_public {
         opendir(FILES, "files/$type");
         while ((my $entry = readdir(FILES))) {
             if (! -f "files/$type/$entry") { next; }
-            if ($entry !~ /^r(\d+)_pzs-ng(-(.+?))?\.tar\.gz$/) { next; }
+            if ($entry !~ /^project-zs-ng_r(\d+)(-(.+?))?\.tar\.gz$/) { next; }
             push(@revisions, $1);
             if (defined($3)) { $revinfo{$1} = $3 };
         }
@@ -706,7 +706,7 @@ sub irc_public {
 sub irc_ctcp_version {
     my ($target, $sender, $kernel) = @_[ARG0, SENDER, KERNEL];
     $target =~ s/^([^!]+)!(?:.*)$/$1/;
-    $kernel->post($sender => 'ctcpreply' => $target => "VERSION p-zs-ng\002v0.9-SVN\002 - (c) daxxar \002/\002 team pzs-ng");
+    $kernel->post($sender => 'ctcpreply' => $target => "VERSION p-zs-ng\002v0.99-SVN\002 - (c) daxxar \002/\002 team pzs-ng");
 }
 
 sub tick {
