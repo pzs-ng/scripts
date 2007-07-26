@@ -1,0 +1,118 @@
+### template-mirror manual. *cough* (c) daxxar <daxxar@daxxar.com>
+## THIS BLOODY SCRIPT IS (horribly) WRITTEN BY DAXXAR, SO RESPECT
+## HIS WISH AND DON'T SPREAD IT, MMKAY! :p (if you REALLY want to
+## spread it, ask me to make a prettier and more usable version ;)
+
+## Info
+template-mirror is a small script (?) that has a few templating
+features, and a mirror-via-ftp feature. it's designed for a specific
+use: mirroring www.pzs-ng.com. it's not meant to be spread. OK!? :P
+
+## Config
+
+# Variables
+> sync_deleted (default: 'yes')
+If y or yes, it'll remove files on mirror which are found remotely,
+but not locally. This will make sure there are no 'useless' files on
+the mirror, hogging space ;)
+
+> templatedir (default: 'templates')
+This is the directory in which templates are looked for, and subsequently
+parsed (into 'outputdir', see below). Not recursive!
+
+> outputdir (default: 'pages')
+This is the directory in which parsed templates are outputted to, this is only
+temporary. (Removed at end of run)
+
+> domain (default: 'pzs-ng.com')
+This is the domain which all your mirrors are a subdomain of. (For links)
+e.g. hash.mirrors.foo = 'something' -> foo.pzs-ng.com
+(assuming domain = pzs-ng.com)
+
+> mirrorlinks_sep (default: ' - ')
+This is what the separator between the mirrors are in %mirror_links.
+
+> stable_local (default: 'stable')
+> stable_remote (defalt: 'stable')
+This is the remote and local dir which stable releases are put. 
+Files in stable_local will be uploaded to stable_remote, and shown under
+%file_links{stable,foo}. :)
+
+> testing_local (default: 'testing')
+> testing_remote (default: 'testing')
+This is the remote and local dir which testing releases are put. 
+Files in testing_local will be uploaded to testing_remote, and shown under
+%file_links{testing,foo}. :)
+
+> unstable_local (default: 'unstable')
+> unstable_remote (default: 'unstable')
+This is the remote and local dir which unstable releases are put. 
+Files in unstable_local will be uploaded to unstable_remote, and shown under
+%file_links{unstable,foo}. :)
+
+> default_password (default: 'anonymous@')
+This is the password which the script will use if the mirror-definition
+has none. (if no user is found, it'll use "anonymous" as user)
+
+> default_passive (default: 'yes')
+If y or yes, it'll use passive mode per default (for syncing).
+(if not, it'll use active)
+Note! This can be overridden per mirror, see below (# Mirrors)
+
+# Mirrors
+Mirrors are specified in the config-file, and you use the following syntax:
+hash.mirrors.<mirror keyword> = 'something'.
+'something' is the specs for the ftpd you connect to.
+First, you can have one (or none) "protocol-specifier" (it's not really a
+protocol, just variations of ftp):
+ ftp:// - default (same as none), uses default_passive to determine mode.
+ active:// - explicitly sets mode to active.
+ passive:// - explicitly sets mode to passive.
+ pasv:// - synonym for passive://.
+Secondly, you have a specification of username, password, host, port and dir:
+ username:password@site:port/path/
+Now, all of these are optional, except site. If no path is specified, / is used.
+If no port is specified, 21 is used. If no username is specified, anonymous
+is used. If no password is specified, default_password is used (see above).
+
+# Mirrors, examples
+ active://daxxar:developer@daxxar.com:86/public_html/
+  This leaves nothing for the script to determine. /public_html/ is used for 
+  files, port is 86, user daxxar, password developer and active mode is set.
+ passive://psxc@psxc.com
+  This uses default_password for password, port 21, directory /, passive mode
+  and psxc as username.
+ ftp://ftpd.gl/htdocs
+  This uses ftpd.gl for host, anonymous for user, default_password for pass,
+  port 21 and /htdocs for directory. Mode is determined by default_passive.
+
+
+## Usage
+
+# Templates
+template files, name them <filename on site>.tpl, and put them in 
+templates/. it'll get synced next time you run the script.
+currently, there are only three cookies: 
+%country: code that represents the current mirrors country ("dk", "us1", etc).
+%mirror_links: list of all mirrors, with links (not link to %country, though)
+%file_links{section,download prefix}: list of all the files in section.
+%time_of_generation: date when the page was generated from template.
+%newest_file{section}: a link to the most recently modified file in section.
+
+# Verbose / Wipe
+the script has three 'options'. you can use verbose mode, you can use 
+wipe mode, or you can use both.
+if you want verbose mode (useful output), use ./tm.pl verbose
+if you want wipe mode (wipes and reups tarballs), use ./tm.pl wipe
+if you want both, use ./tm.pl verbose wipe (verbose HAS to be the first option)
+
+# Mirrors
+after any of those options, you can specify any number of mirrors to be synced.
+you only specify the 'name' of the mirror, e.g. "dk", "us1", "cl".
+if you don't specify ANY mirrors, it'll sync *ALL* available mirrors.
+
+## Examples
+./tm.pl verbose dk	 # Syncs .dk mirror, verbose output.
+./tm.pl wipe		 # Wipes and syncs ALL mirrors.
+./tm.pl se us1 www	 # Syncs se, us1 and www mirrors, no output.
+./tm.pl verbose wipe # Wipes all tarballs before syncing all mirrors, verbosely.

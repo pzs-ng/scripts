@@ -1,0 +1,22 @@
+# Sample configuration file.
+
+var.sync_deleted = 'yes';
+var.templatedir = 'templates'
+var.outputdir = 'pages'
+var.mirrorlinks_sep = ' ';
+var.domain = 'pzs-ng.com'
+var.stable_local = 'files/stable'
+var.stable_remote = 'stable'
+var.testing_local = 'files/testing'
+var.testing_remote = 'testing'
+var.unstable_local = 'files/unstable'
+var.unstable_remote = 'unstable'
+var.volatile_local = 'files/volatile'
+var.volatile_remote = 'volatile'
+var.default_password = 'some-password'
+var.default_passive = 'no'
+
+var.quotes_file = 'quotes'
+
+hash.mirrors.no = 'passive://pzs-ng:norwegian_mirror_password@no-mirror.webhosting.com'
+hash.mirrors.se = 'ftp://pzs-ng:swedish_mirror_password@free-hosting.se-mirror.se/public_html'
