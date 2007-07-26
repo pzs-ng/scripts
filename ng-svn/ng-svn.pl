@@ -791,7 +791,9 @@ POE::Session->create(
             zsconfig => YAML::LoadFile($config->{zsconfig}),
             config => $config }
         );
+
 $poe_kernel->sig(USR1 => "sigusr1");
+$poe_kernel->sig(CHLD => "sigchld");
 $poe_kernel->run();
 
 untie %factoids;
