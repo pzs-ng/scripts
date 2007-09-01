@@ -1,4 +1,4 @@
-# psxc-mp3fetch v0.2
+# psxc-mp3fetch v0.3
 # ==================
 #
 # A small, simple util to read the id3 header of a mp3 and give you the info.

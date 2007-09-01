@@ -837,7 +837,7 @@ int main(int argv, char **argc) {
 		if (info.is_vbr) {
 			printf("vbr version      : %s\n", info.vbr_version_string);
 			printf("vbr preset       : %s\n", info.vbr_preset);
-			printf("vbr type         : %s\n", *info.vbr_oldnew ? "VBR-OLD" : "VBR-NEW");
+			printf("vbr type         : %s\n", *info.vbr_oldnew ? "VBR-NEW" : "VBR-OLD");
 			printf("vbr quality      : %d\n", info.vbr_quality);
 			printf("vbr min. bitrate : %d\n", info.vbr_minimum_bitrate);
 			printf("vbr noiseshaping : %d\n", info.vbr_noiseshaping);
@@ -848,7 +848,7 @@ int main(int argv, char **argc) {
 	 } else {
 		printf("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s", info.id3_artist, info.id3_title, info.id3_album, info.id3_year, info.id3_genre, info.bitrate, info.is_vbr ? "VBR" : "CBR", info.channelmode, info.samplingrate, info.codec, info.layer);
 		if (info.is_vbr)
-			printf("|%s|%s|%s|%d|%d|%d|%s|%s|%s", info.vbr_version_string, info.vbr_preset, *info.vbr_oldnew ? "VBR-OLD" : "VBR-NEW", info.vbr_quality, info.vbr_minimum_bitrate, info.vbr_noiseshaping, info.vbr_stereo_mode, info.vbr_unwise, info.vbr_source);
+			printf("|%s|%s|%s|%d|%d|%d|%s|%s|%s", info.vbr_version_string, info.vbr_preset, *info.vbr_oldnew ? "VBR-NEW" : "VBR-OLD", info.vbr_quality, info.vbr_minimum_bitrate, info.vbr_noiseshaping, info.vbr_stereo_mode, info.vbr_unwise, info.vbr_source);
 		printf("\n");
 	}
 	return 0;
