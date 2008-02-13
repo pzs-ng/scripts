@@ -7,7 +7,7 @@ use FindBin qw($Bin);
 use Net::FTP;
 use Digest::MD5;
 
-#use Data::Dumper;
+use Data::Dumper;
 
 $| = 1;
 
@@ -189,6 +189,24 @@ sub parse_link {
 	return %parts;
 }
 
+sub recursive_rm {
+	my ($ftp, $dir) = @_;
+	
+	my $pwd = $ftp->pwd();
+	$ftp->cwd($dir);
+	my @files = $ftp->ls();
+	for my $file (@files) {
+		next if $file =~ /^\.\.?$/;
+		# A hack.
+		if (!$ftp->delete($file))
+		{
+			recursive_rm($ftp, $file);
+		}
+	}
+	$ftp->cwd($pwd);
+	$ftp->rmdir($dir);
+}
+
 sub sync_files {
 	my ($country, $mode) = @_;
 	my %site = parse_link($hashes{'mirrors'}{$country});
@@ -204,27 +222,35 @@ sub sync_files {
 	  or return eprint "    ! Could not change to binary mode on $country.$vars{domain}: ". $ftp->message . "\n";
 
 	my %dirs_exist = ($vars{'unstable_remote'} => 0, $vars{'stable_remote'} => 0, $vars{'testing_remote'} => 0, $vars{'volatile_remote'} => 0);
+	vprint "    - Deleting or checking for existing files.\n";
 	my @files = $ftp->ls();
 	for my $file (@files) {
+		vprint "    - Found $file.\n";
 		if (exists($dirs_exist{$file})) {
 			if ($mode eq 'wipe') {
-				$ftp->rmdir($file, 1)
-				  or return eprint "    ! Could not do a recursive rmdir on $country.$vars{domain}: ". $ftp->message ."\n";
+				vprint "     - Wiping!\n";
+				recursive_rm($ftp, $file);
+#				$ftp->rmdir($file, 1)
+#				  or return eprint "    ! Could not do a recursive rmdir on $country.$vars{domain}: ". $ftp->message ."\n";
 			} else {
+				vprint "     - Marked as found!\n";
 				$dirs_exist{$file} = 1;
 			}
 		} elsif (exists($templates{$file})) {
+			vprint "     - Deleting!\n";
 			$ftp->delete($file);
 		}	
 	}
 
+	
+	vprint "    - Creating neccessary directory structure.\n";
 	for my $dir (keys %dirs_exist) {
 		if (!$dirs_exist{$dir}) {
 			$ftp->mkdir($dir)
 			  or return eprint "    ! Could not mkdir $dir on $country.$vars{domain}: ". $ftp->message . "\n";
 		}
 	}
-	
+
 	my %dirs_remote = (unstable => $vars{'unstable_remote'}, stable => $vars{'stable_remote'}, testing => $vars{'testing_remote'}, volatile => $vars{'volatile_remote'});
 	my %dirs_local = (unstable => $vars{'unstable_local'}, stable => $vars{'stable_local'}, testing => $vars{'testing_local'}, volatile => $vars{'volatile_local'});
 	for my $key (keys %dirs_remote) {

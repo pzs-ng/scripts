@@ -10,11 +10,12 @@ Welcome to pzs-ng (Project Zipscript - Next Generation)<br>
 You must agree to <a href="disclaimer.html">this disclaimer</a> before using any of the offered resources.<br><br>
 <br>
 <a target=_blank href="http://bugs.pzs-ng.com/">Bugtracker</a><br>
+<a target=_blank href="http://www.sourceforge.net/projects/pzs-ng/">SourceForge.net project</a><br> 
 <br>
 <!-- <a target=_blank href="ftp://pzs-ng.ftpd.gl/">Public FTP</a> Updated every 5 mins.<br> -->
 <a target=_blank href="ftp://pzs-ng:pzs-ng@ftp.pzs-ng.com:21021/">Public FTP</a> Updated every 15 mins.<br>
-<!-- <a target=_blank href="svn://svnmirror.pzs-ng.com/project-zs-ng/branches/pzs-ng_v1/trunk/">Public SVN</a> Updated every hour.<br> -->
-<a target=_blank href="http://svn.pzs-ng.com/project-zs-ng/branches/pzs-ng_v1/trunk/">SVN repository</a> This is our repository, you can check out using 'svn co http://svn.pzs-ng.com/project-zs-ng/branches/pzs-ng_v1/trunk/'.<br>
+<!-- <a target=_blank href="svn://svnmirror.pzs-ng.com/project-zs-ng/trunk/">Public SVN</a> Updated every hour.<br> -->
+<a target=_blank href="http://svn.pzs-ng.com/project-zs-ng/trunk/">SVN repository</a> This is our repository, you can check out using 'svn co http://svn.pzs-ng.com/project-zs-ng/trunk/'.<br>
 <br>
 Newest unstable: %newest_file{unstable} (note, this page is updated at manual intervals)<br>
 Newest stable: %newest_file{stable} (note, this page is updated at manual intervals)<br><br>

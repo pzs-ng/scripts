@@ -7,9 +7,9 @@
 ## Configuration directives!
 # Where we're supposed to put output stuff, it's $DIR/files/$TYPE
 DIR="/home/www/scripts/template-mirror"
-SVNPATH_stable="file:///svn/pzs-ng/project-zs-ng/branches/pzs-ng_v1/trunk/"
-SVNPATH_testing="file:///svn/pzs-ng/project-zs-ng/branches/pzs-ng_v1/trunk/"
-SVNPATH_unstable="file:///svn/pzs-ng/project-zs-ng/branches/pzs-ng_v1/trunk/"
+SVNPATH_stable="file:///svn/pzs-ng/project-zs-ng/trunk/"
+SVNPATH_testing="file:///svn/pzs-ng/project-zs-ng/trunk/"
+SVNPATH_unstable="file:///svn/pzs-ng/project-zs-ng/trunk/"
 SVNPATH_volatile="file:///svn/pzs-ng/project-zs-ng/trunk/"
 ## Configuration ends here!
 
@@ -74,4 +74,5 @@ echo -n " * Wiping directory... "
 rm -r "$TARGETDIR"
 echo "done!"
 
+ncftpput -b upload.sourceforge.net incoming "$DIR/$TARGETARCHIVE"
 echo "+ Done!"
