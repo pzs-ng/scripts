@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# psxc-unpack.sh v1.3 (c) psxc//2006
+# psxc-unpack.sh v1.5 (c) psxc//2006
 ####################################
 #
 # This simple little thingy extracts files in a dir and removes the
@@ -85,6 +85,12 @@ COMPLETEDIR=".*\[.*\].*[-].[Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ee].*\[.*\].*"
 # default setting removes the complete bar, sample dir and dot-files (like .message)
 RMFILES="*\[*\]*[Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ee]*\[*\]* [Ss][Aa][Mm][Pp][Ll][Ee] \.[a-zA-Z0-9]*"
 
+# the following allows you to include autoremoval of *.0xx files. Normally
+# it should stay active ("YES") but in some instances it is beneficial to disable
+# it ("") so .001 files are not deleted. .001 files may be used in DVD9 burner
+# programs...
+DEL_001_FILES="YES"
+
 # set this to '1' to make the script run immediatly after release is complete
 RUN_NOW=0
 
@@ -106,6 +112,9 @@ UNPACKERROR="  PSXC-UNPACK - FAILED TO UNPACK ARCHIVE (%%)  "
 ################################################################
 # CODE BELOW - PLEASE IGNORE
 ################################################################
+
+# remove the # on the line below for debug purposes only.
+# set -x -v
 
 RDIR=""
 [[ -d $GLROOT/bin ]] && RDIR=$GLROOT
@@ -148,17 +157,17 @@ while [ 1 ]; do
     [[ ! -e "$RDIR/$DNAME" ]] && break
     ls -1 "$RDIR/$DNAME" >"$RDIR/$LOGFILE.tmp"
     cd "$RDIR/$DNAME"
-    while read -a FNAME; do
+    while read FNAME; do
       for FTYPE in $FILETYPES; do
-        [[ ! -z "$(echo $FNAME | grep $FTYPE)" ]] && EXTRACTNAME=$FNAME
+        [[ ! -z "$(echo "$FNAME" | grep $FTYPE)" ]] && EXTRACTNAME="$FNAME"
       done
       [[ ! -z "$EXTRACTNAME" ]] && {
         archive_name=""
         skip_archive=1
-        for archive_name in $(unrar lb $EXTRACTNAME); do
-          [[ ! -e $archive_name ]] && skip_archive=0
+        for archive_name in $(unrar lb "$EXTRACTNAME" | tr ' ' '$'); do
+          [[ ! -e "$(echo "$archive_name" | tr '$' ' ')" ]] && skip_archive=0
         done
-        [[ $skip_archive -eq 1 ]] && $RM $EXTRACTNAME && EXTRACTNAME=""
+        [[ $skip_archive -eq 1 ]] && $RM "$EXTRACTNAME" && EXTRACTNAME=""
         [[ $skip_archive -ne 1 ]] && break
       }
     done < "$RDIR/$LOGFILE.tmp"
@@ -179,11 +188,11 @@ while [ 1 ]; do
       echo "$RDIR/$DNAME" >>"$RDIR/$LOGFILE.complete"
       ls -1 "$RDIR/$DNAME" >"$RDIR/$LOGFILE.tmp" && chmod 666 "$RDIR/$LOGFILE.tmp"
       DELME=""
-      while read -a FNAME; do
+      while read FNAME; do
         [[ ! -z "$(echo "$FNAME" | grep -e "\.[Ss][Ff][Vv]$")" && -e "$FNAME" ]] && {
           [[ ! -z "$(grep -ir "$EXTRACTNAME" "$FNAME")" ]] && {
-            for DELME in $(cat "$FNAME" | grep -v "^;"); do
-              [[ -f $(find ./ -iname "$DELME") ]] && $RM $(find ./ -iname "$DELME")
+            for DELME in $(cat "$FNAME" | tr ' ' '$' | grep -v "^;"); do
+              [[ -f "$(find ./ -iname "$(echo "$DELME" | tr ' ' '$')")" ]] && $RM "$(find ./ -iname "$(echo "$DELME" | tr '$' ' ')")"
             done
             $RM "$FNAME" && break
           }
@@ -199,12 +208,15 @@ while [ 1 ]; do
         done
         [[ $num_dots -gt 0 ]] && {
           $RM "./$partial.[Pp][Aa][Rr][Tt]*.[Rr][Aa][Rr]" 2>/dev/null
-          $RM "./$partial.[Rr0-9][Aa0-9][Rr0-9]" 2>/dev/null
+          $RM "./$partial.[Rr][Aa][Rr]" 2>/dev/null
+          [[ "$DEL_001_FILES" ]] && {
+            $RM "./$partial.[0-9][0-9][0-9]" 2>/dev/null
+          }
         }
       }
       [[ ! -z "$RMFILES" ]] && {
-        for DELME in $RMFILES; do
-          $RMDIR "./$DELME"
+        for DELME in $(echo "$RMFILES" | tr ' ' '$'); do
+          $RMDIR "$(echo "./$DELME" | tr '$' ' ')"
         done
       }
       [[ ! -z "$PARENT" ]] && {
@@ -227,7 +239,7 @@ while [ 1 ]; do
   [[ ! -z "$GLLOG" && $RETMODE -ne 0 ]] && echo "$(date "+%a %b %e %T %Y") PSXCUNPACKERROR: {$DNAME}" >>$RDIR/$GLLOG
 done
 [[ $CHMOD_DIRS -eq 1 && $RET -eq 0 ]] && {
-  while read -a CDIR; do
+  while read CDIR; do
     [[ -d "$CDIR" ]] && chmod 555 "$CDIR"
   done < "$RDIR/$LOGFILE.complete"
 }
