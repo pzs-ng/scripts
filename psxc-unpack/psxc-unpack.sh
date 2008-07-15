@@ -24,7 +24,7 @@
 #      #define complete_script "/bin/psxc-unpack.sh"
 #    to zsconfig.h
 # 4. add a crontab entry to execute /glftpd/bin/psxc-unpack.sh at certain intervals
-#      */5 * * * * /glftpd/bin/psxc-unpack.sh
+#      */5 * * * * /glftpd/bin/psxc-unpack.sh >/dev/null
 #
 # you can also use this as a site command - fyi
 #   site_cmd UNPACK EXEC /bin/psxc-unpack.sh
@@ -129,7 +129,15 @@ RDIR=""
        break
     }
   done
-  [[ $found -eq 1 ]] && echo "$PWD" >>$RDIR/$LOGFILE
+ [[ $found -eq 1 ]] && {
+   for DNAME in $SKIPDIRS; do
+     [[ ! -z "$(echo $PWD | grep $DNAME)" ]] && {
+       found=0
+       break
+     }
+   done
+    [[ $found -eq 1 ]] && echo "$PWD" >>$RDIR/$LOGFILE
+ }
 }
 [[ "$(echo "$MAGICWORD" | tr 'A-Z' 'a-z')" == "$(echo "$1" | tr 'A-Z' 'a-z')" ]] && RUN_NOW=1
 [[ $RUN_NOW -ne 1 && ! -e $GLROOT/$LOGFILE && -e $SITEDIR ]] && exit 0
