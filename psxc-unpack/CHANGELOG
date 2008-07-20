@@ -14,6 +14,10 @@ v1.3 - Fixed more issues regarding spaces in dirnames.
 v1.4 - Made it possible to disable the autodeleting of .001 files (mostly
        beneficial for XBOX360 DVD9 images)
 v1.5 - Even more fixes with spaces in dirnames and filenames inside archive.
+v1.6 - daxxar added support for skipdirs and edited the crontab line.
+v2.0 - more or less a rewrite of the script - should be quicker and handle "bad"
+       archives better (like archives with an identical named archive inside).
+       Renamed SKIPDIRS to IGNOREDIRS (sorry daxxar)
 
-// psxc(c)2006
+// psxc(c)2006-2008
 

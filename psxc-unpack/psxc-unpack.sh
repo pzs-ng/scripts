@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# psxc-unpack.sh v1.5 (c) psxc//2006
+# psxc-unpack.sh v2.0 (c) psxc//2008
 ####################################
 #
 # This simple little thingy extracts files in a dir and removes the
@@ -24,7 +24,7 @@
 #      #define complete_script "/bin/psxc-unpack.sh"
 #    to zsconfig.h
 # 4. add a crontab entry to execute /glftpd/bin/psxc-unpack.sh at certain intervals
-#      */5 * * * * /glftpd/bin/psxc-unpack.sh >/dev/null
+#      */5 * * * * /glftpd/bin/psxc-unpack.sh >/dev/null 2>&1
 #
 # you can also use this as a site command - fyi
 #   site_cmd UNPACK EXEC /bin/psxc-unpack.sh
@@ -85,11 +85,9 @@ COMPLETEDIR=".*\[.*\].*[-].[Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ee].*\[.*\].*"
 # default setting removes the complete bar, sample dir and dot-files (like .message)
 RMFILES="*\[*\]*[Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ee]*\[*\]* [Ss][Aa][Mm][Pp][Ll][Ee] \.[a-zA-Z0-9]*"
 
-# the following allows you to include autoremoval of *.0xx files. Normally
-# it should stay active ("YES") but in some instances it is beneficial to disable
-# it ("") so .001 files are not deleted. .001 files may be used in DVD9 burner
-# programs...
-DEL_001_FILES="YES"
+# The following variable allows you to list dirs that are excluded from
+# the DIRS list - if the dir match this, it will be skipped.
+IGNOREDIRS="_subs$ /site/XVID/SUBS"
 
 # set this to '1' to make the script run immediatly after release is complete
 RUN_NOW=0
@@ -114,7 +112,7 @@ UNPACKERROR="  PSXC-UNPACK - FAILED TO UNPACK ARCHIVE (%%)  "
 ################################################################
 
 # remove the # on the line below for debug purposes only.
-# set -x -v
+#set -x -v
 
 RDIR=""
 [[ -d $GLROOT/bin ]] && RDIR=$GLROOT
@@ -129,15 +127,7 @@ RDIR=""
        break
     }
   done
- [[ $found -eq 1 ]] && {
-   for DNAME in $SKIPDIRS; do
-     [[ ! -z "$(echo $PWD | grep $DNAME)" ]] && {
-       found=0
-       break
-     }
-   done
-    [[ $found -eq 1 ]] && echo "$PWD" >>$RDIR/$LOGFILE
- }
+  [[ $found -eq 1 ]] && echo "$PWD" >>$RDIR/$LOGFILE
 }
 [[ "$(echo "$MAGICWORD" | tr 'A-Z' 'a-z')" == "$(echo "$1" | tr 'A-Z' 'a-z')" ]] && RUN_NOW=1
 [[ $RUN_NOW -ne 1 && ! -e $GLROOT/$LOGFILE && -e $SITEDIR ]] && exit 0
@@ -155,7 +145,19 @@ while [ 1 ]; do
   [[ -z "$(cat "$RDIR/$LOGFILE")" ]] && break
   DNAME="$(head -n 1 $RDIR/$LOGFILE)"
   [[ ! -d "$RDIR/$DNAME" ]] && {
-    grep -v "$DNAME$" "$RDIR/$LOGFILE" > "$RDIR/$LOGFILE.tmp"
+    grep -v "$DNAME" "$RDIR/$LOGFILE" > "$RDIR/$LOGFILE.tmp"
+    mv "$RDIR/$LOGFILE.tmp" "$RDIR/$LOGFILE"
+    continue
+  }
+  IGNORED=""
+  for IGNORE in $IGNOREDIRS; do
+    [[ ! -z "$(echo "$DNAME" | grep $IGNORE)" ]] && {
+      IGNORED="YES"
+      break
+    }
+  done
+  [[ ! -z "$IGNORED" ]] && {
+    grep -v "$DNAME" "$RDIR/$LOGFILE" > "$RDIR/$LOGFILE.tmp"
     mv "$RDIR/$LOGFILE.tmp" "$RDIR/$LOGFILE"
     continue
   }
@@ -167,21 +169,16 @@ while [ 1 ]; do
     cd "$RDIR/$DNAME"
     while read FNAME; do
       for FTYPE in $FILETYPES; do
-        [[ ! -z "$(echo "$FNAME" | grep $FTYPE)" ]] && EXTRACTNAME="$FNAME"
+        [[ ! -z "$(echo "$FNAME" | grep $FTYPE)" ]] && {
+          EXTRACTNAME="$FNAME"
+          BASETYPE=$FTYPE
+          break
+        }
       done
-      [[ ! -z "$EXTRACTNAME" ]] && {
-        archive_name=""
-        skip_archive=1
-        for archive_name in $(unrar lb "$EXTRACTNAME" | tr ' ' '$'); do
-          [[ ! -e "$(echo "$archive_name" | tr '$' ' ')" ]] && skip_archive=0
-        done
-        [[ $skip_archive -eq 1 ]] && $RM "$EXTRACTNAME" && EXTRACTNAME=""
-        [[ $skip_archive -ne 1 ]] && break
-      }
     done < "$RDIR/$LOGFILE.tmp"
     rm "$RDIR/$LOGFILE.tmp"
     :>"$RDIR/$LOGFILE.tmp" && chmod 666 "$RDIR/$LOGFILE.tmp"
-    grep -v "$DNAME$" "$RDIR/$LOGFILE" > "$RDIR/$LOGFILE.tmp"
+    grep -v "$DNAME" "$RDIR/$LOGFILE" > "$RDIR/$LOGFILE.tmp"
     mv "$RDIR/$LOGFILE.tmp" "$RDIR/$LOGFILE"
     [[ -z "$EXTRACTNAME" ]] && break
     SMATCH=0
@@ -189,50 +186,45 @@ while [ 1 ]; do
       [[ ! -z "$(basename "$DNAME" | grep -e "$SUBDIR")" ]] && SMATCH=1 && break
     done
     [[ $SMATCH -eq 1 ]] && PARENT="../" || PARENT=""
-    $UNRAR "$EXTRACTNAME" #$PARENT
+    BASENAME="$(echo "$EXTRACTNAME" | sed "s/$BASETYPE//")"
+    unrar vt -v -- "$EXTRACTNAME" | grep -- "$BASENAME" | grep -v "^ " | cut -d ' ' -f 2- >$RDIR/$LOGFILE.lst
+    mkdir ./.psxctmp
+    $UNRAR "$EXTRACTNAME" ./.psxctmp/
     RET=$?
     UNPACKERR="$(echo "$UNPACKERROR" | tr '/\$\\\&\ ' '_' | sed "s|%%|$EXTRACTNAME|")"
     [[ $RET -eq 0 ]] && {
       echo "$RDIR/$DNAME" >>"$RDIR/$LOGFILE.complete"
-      ls -1 "$RDIR/$DNAME" >"$RDIR/$LOGFILE.tmp" && chmod 666 "$RDIR/$LOGFILE.tmp"
-      DELME=""
       while read FNAME; do
-        [[ ! -z "$(echo "$FNAME" | grep -e "\.[Ss][Ff][Vv]$")" && -e "$FNAME" ]] && {
-          [[ ! -z "$(grep -ir "$EXTRACTNAME" "$FNAME")" ]] && {
-            for DELME in $(cat "$FNAME" | tr ' ' '$' | grep -v "^;"); do
-              [[ -f "$(find ./ -iname "$(echo "$DELME" | tr ' ' '$')")" ]] && $RM "$(find ./ -iname "$(echo "$DELME" | tr '$' ' ')")"
-            done
-            $RM "$FNAME" && break
-          }
-        }
-      done < "$RDIR/$LOGFILE.tmp"
-      rm "$RDIR/$LOGFILE.tmp"
-      [[ -z "$DELME" ]] && {
-        num_dots=$(echo "$EXTRACTNAME" | tr -cd '\.' | wc -c | tr -cd '0-9')
-        while [ $num_dots -gt 0 ]; do
-          partial="$(echo "$EXTRACTNAME" | cut -d '.' -f 1-$num_dots)"
-          [[ "$partial" =~ "[Pp][Aa][Rr][Tt][0-9]*" || "$partial" =~ "[Rr0-9][Aa0-9][Rr0-9]$" ]] || break
-          let num_dots-=1
-        done
-        [[ $num_dots -gt 0 ]] && {
-          $RM "./$partial.[Pp][Aa][Rr][Tt]*.[Rr][Aa][Rr]" 2>/dev/null
-          $RM "./$partial.[Rr][Aa][Rr]" 2>/dev/null
-          [[ "$DEL_001_FILES" ]] && {
-            $RM "./$partial.[0-9][0-9][0-9]" 2>/dev/null
-          }
-        }
-      }
+        $RM "$FNAME"
+      done <$RDIR/$LOGFILE.lst
+      rm "$RDIR/$LOGFILE.lst"
+      mv -f ./.psxctmp/* ./ && rm -fR ./.psxctmp
+
       [[ ! -z "$RMFILES" ]] && {
         for DELME in $(echo "$RMFILES" | tr ' ' '$'); do
           $RMDIR "$(echo "./$DELME" | tr '$' ' ')"
         done
       }
       [[ ! -z "$PARENT" ]] && {
-        CHECKSUB=$(find ./ -name *.[Rr0-9][Aa0-9][Rr0-9] | tr -cd 'A-Za-z0-9')
-        [[ -z "$CHECKSUB" ]] && mv ./* ../ && $RMDIR "$PWD"
+        ls -1 >"$RDIR/$LOGFILE.tmp"
+        EXTRACTNAME=""
+        while read FNAME; do
+          for FTYPE in $FILETYPES; do
+            [[ ! -z "$(echo "$FNAME" | grep $FTYPE)" ]] && {
+              EXTRACTNAME="$FNAME"
+              BASETYPE=$FTYPE
+              break
+            }
+          done
+        done < "$RDIR/$LOGFILE.tmp"
+        rm "$RDIR/$LOGFILE.tmp"
+        [[ -z "$EXTRACTNAME" ]] && mv ./* ../ && $RMDIR "$PWD"
       }
       [[ ! -e "$RDIR/$DNAME" ]] && break
       [[ $(ls -1 "$RDIR/$DNAME" | grep -v "^\ " | grep -v "^\." | grep -v "$COMPLETEDIR" | grep -v "$UNPACKERR" | wc -l) -eq 0 ]] && $RMDIR "$RDIR/$DNAME"
+    } || {
+      [[ -e ./.psxctmp ]] && rm -fR ./.psxctmp
+      [[ -e "$RDIR/$LOGFILE.lst" ]] && rm "$RDIR/$LOGFILE.lst"
     }
     RETMODE=$RET
     [[ $RET -ne 0 ]] && {

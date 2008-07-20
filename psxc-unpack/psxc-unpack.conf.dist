@@ -36,8 +36,9 @@ GLLOG=/ftp-data/logs/glftpd.log
 # in what dirs should this script be executed?
 DIRS="/site/XVID /site/DVDR"
 
-# in what dirs should this script *not* be executed (if they match DIRS)
-SKIPDIRS="/site/XVID/_SUBS"
+# The following variable allows you to list dirs that are excluded from
+# the DIRS list - if the dir match this, it will be skipped.
+IGNOREDIRS="_subs$ /site/XVID/SUBS"
 
 # the unrar command. remove the 'echo' in front to activate
 # also check the man page for unrar.
