@@ -62,8 +62,8 @@ COMPLETEDIR=".*\[.*\].*[-].[Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ee].*\[.*\].*"
 
 # this variable holds a list of files/dirs to remove if extraction was complete.
 # (not regexp style, so slightly different.) separate with a space.
-# default setting removes the complete bar, sample dir and dot-files (like .message)
-RMFILES="*\[*\]*[Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ee]*\[*\]* [Ss][Aa][Mm][Pp][Ll][Ee] \.[a-zA-Z0-9]*"
+# default setting removes the complete bar, sample dir, sfv-files and dot-files (like .message)
+RMFILES="*\[*\]*[Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ee]*\[*\]* [Ss][Aa][Mm][Pp][Ll][Ee] \.[a-zA-Z0-9]* *.[Ss][Ff][Vv]"
 
 # set this to '1' to make the script run immediatly after release is complete
 RUN_NOW=0

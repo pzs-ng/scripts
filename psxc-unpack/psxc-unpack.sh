@@ -82,8 +82,8 @@ COMPLETEDIR=".*\[.*\].*[-].[Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ee].*\[.*\].*"
 
 # this variable holds a list of files/dirs to remove if extraction was complete.
 # (not regexp style, so slightly different.) separate with a space.
-# default setting removes the complete bar, sample dir and dot-files (like .message)
-RMFILES="*\[*\]*[Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ee]*\[*\]* [Ss][Aa][Mm][Pp][Ll][Ee] \.[a-zA-Z0-9]*"
+# default setting removes the complete bar, sample dir, sfv-files and dot-files (like .message)
+RMFILES="*\[*\]*[Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ee]*\[*\]* [Ss][Aa][Mm][Pp][Ll][Ee] \.[a-zA-Z0-9]* *.[Ss][Ff][Vv]"
 
 # The following variable allows you to list dirs that are excluded from
 # the DIRS list - if the dir match this, it will be skipped.
@@ -201,8 +201,8 @@ while [ 1 ]; do
       mv -f ./.psxctmp/* ./ && rm -fR ./.psxctmp
 
       [[ ! -z "$RMFILES" ]] && {
-        for DELME in $(echo "$RMFILES" | tr ' ' '$'); do
-          $RMDIR "$(echo "./$DELME" | tr '$' ' ')"
+        for DELME in $RMFILES; do
+          $RMDIR $DELME
         done
       }
       [[ ! -z "$PARENT" ]] && {
