@@ -72,6 +72,15 @@ RUN_NOW=0
 # variable to 1.
 CHMOD_DIRS=1
 
+# The script supports unpacking of zipfiles as well. If the following variable
+# is set, the script will try to unpack zipfiles as well. To disable it, set
+# it to "".
+ZIPUNPACK="YES"
+
+# the unzip command. remove the 'echo' in front to activate.
+# IMPORTANT! Do not add switches behind unzip!"
+UNZIP="echo nice -n 20 unzip"
+
 # Touch a file if extraction of the archive fails? Set to "" to disable.
 # The file will be placed in the 'main' dir - ie, not in the subdir.
 # Forbidden chars include / & \ $ [:space:] (they will be replaced with _)

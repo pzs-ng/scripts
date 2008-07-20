@@ -2,7 +2,6 @@ psxc-unpack changelog
 ---------------------
 
 v1.0 - First official release.
-
 v1.1 - Fixed a bug when extracting from subdirs - if the rarfile(s) in a subdir
        contained another (set of) rar-file(s), which was named the same as the
        one(s) in the main dir, the files in the main dir would be overwritten.
@@ -18,6 +17,7 @@ v1.6 - daxxar added support for skipdirs and edited the crontab line.
 v2.0 - more or less a rewrite of the script - should be quicker and handle "bad"
        archives better (like archives with an identical named archive inside).
        Renamed SKIPDIRS to IGNOREDIRS (sorry daxxar)
+v2.1 - Fixed bug with *.partXX.rar archives. Added support for zip-extraction.
 
 // psxc(c)2006-2008
 

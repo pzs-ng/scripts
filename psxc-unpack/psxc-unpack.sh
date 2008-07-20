@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# psxc-unpack.sh v2.0 (c) psxc//2008
+# psxc-unpack.sh v2.1 (c) psxc//2008
 ####################################
 #
 # This simple little thingy extracts files in a dir and removes the
@@ -89,6 +89,15 @@ RMFILES="*\[*\]*[Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ee]*\[*\]* [Ss][Aa][Mm][Pp][Ll][Ee]
 # the DIRS list - if the dir match this, it will be skipped.
 IGNOREDIRS="_subs$ /site/XVID/SUBS"
 
+# The script supports unpacking of zipfiles as well. If the following variable
+# is set, the script will try to unpack zipfiles as well. To disable it, set
+# it to "".
+ZIPUNPACK="YES"
+
+# the unzip command. remove the 'echo' in front to activate.
+# IMPORTANT! Do not add switches behind unzip!"
+UNZIP="echo nice -n 20 unzip"
+
 # set this to '1' to make the script run immediatly after release is complete
 RUN_NOW=0
 
@@ -161,11 +170,26 @@ while [ 1 ]; do
     mv "$RDIR/$LOGFILE.tmp" "$RDIR/$LOGFILE"
     continue
   }
+  ZRETVAL=0
   while [ 2 ]; do
     :>"$RDIR/$LOGFILE.tmp" && chmod 666 "$RDIR/$LOGFILE.tmp"
     EXTRACTNAME=""
     [[ ! -e "$RDIR/$DNAME" ]] && break
-    ls -1 "$RDIR/$DNAME" >"$RDIR/$LOGFILE.tmp"
+    [[ ! -z "ZIPUNPACK" && ! -z "$(ls -1 | grep "\.[Zz][Ii][Pp]$")" && $ZRETVAL -eq 0 ]] && {
+      mkdir ./.psxctmp
+      for zipfile in $(ls -1 | grep "\.[Zz][Ii][Pp]$" | sort); do
+        $UNZIP -oCjd ./.psxctmp $zipfile
+        let ZRETVAL=ZRETVAL+$?
+      done
+      [[ $ZRETVAL -eq 0 ]] && {
+        for zipfile in $(ls -1 | grep "\.[Zz][Ii][Pp]$" | sort); do
+          $RM $zipfile
+        done
+        mv ./.psxctmp/* ./
+      }
+      rm -fR ./.psxctmp
+    }
+    ls -1 "$RDIR/$DNAME" | sort >"$RDIR/$LOGFILE.tmp"
     cd "$RDIR/$DNAME"
     while read FNAME; do
       for FTYPE in $FILETYPES; do
@@ -175,6 +199,7 @@ while [ 1 ]; do
           break
         }
       done
+      [[ ! -z "$EXTRACTNAME" ]] && break
     done < "$RDIR/$LOGFILE.tmp"
     rm "$RDIR/$LOGFILE.tmp"
     :>"$RDIR/$LOGFILE.tmp" && chmod 666 "$RDIR/$LOGFILE.tmp"
@@ -186,7 +211,7 @@ while [ 1 ]; do
       [[ ! -z "$(basename "$DNAME" | grep -e "$SUBDIR")" ]] && SMATCH=1 && break
     done
     [[ $SMATCH -eq 1 ]] && PARENT="../" || PARENT=""
-    BASENAME="$(echo "$EXTRACTNAME" | sed "s/$BASETYPE//")"
+    BASENAME="$(echo "$EXTRACTNAME" | sed "s/\.[Pp][Aa][Rr][Tt][0-9]*\././" | sed "s/$BASETYPE//")"
     unrar vt -v -- "$EXTRACTNAME" | grep -- "$BASENAME" | grep -v "^ " | cut -d ' ' -f 2- >$RDIR/$LOGFILE.lst
     mkdir ./.psxctmp
     $UNRAR "$EXTRACTNAME" ./.psxctmp/
@@ -199,14 +224,13 @@ while [ 1 ]; do
       done <$RDIR/$LOGFILE.lst
       rm "$RDIR/$LOGFILE.lst"
       mv -f ./.psxctmp/* ./ && rm -fR ./.psxctmp
-
       [[ ! -z "$RMFILES" ]] && {
         for DELME in $RMFILES; do
           $RMDIR $DELME
         done
       }
       [[ ! -z "$PARENT" ]] && {
-        ls -1 >"$RDIR/$LOGFILE.tmp"
+        ls -1 | sort >"$RDIR/$LOGFILE.tmp"
         EXTRACTNAME=""
         while read FNAME; do
           for FTYPE in $FILETYPES; do
@@ -221,7 +245,7 @@ while [ 1 ]; do
         [[ -z "$EXTRACTNAME" ]] && mv ./* ../ && $RMDIR "$PWD"
       }
       [[ ! -e "$RDIR/$DNAME" ]] && break
-      [[ $(ls -1 "$RDIR/$DNAME" | grep -v "^\ " | grep -v "^\." | grep -v "$COMPLETEDIR" | grep -v "$UNPACKERR" | wc -l) -eq 0 ]] && $RMDIR "$RDIR/$DNAME"
+      [[ $(ls -1 "$RDIR/$DNAME" | sort | grep -v "^\ " | grep -v "^\." | grep -v "$COMPLETEDIR" | grep -v "$UNPACKERR" | wc -l) -eq 0 ]] && $RMDIR "$RDIR/$DNAME"
     } || {
       [[ -e ./.psxctmp ]] && rm -fR ./.psxctmp
       [[ -e "$RDIR/$LOGFILE.lst" ]] && rm "$RDIR/$LOGFILE.lst"
