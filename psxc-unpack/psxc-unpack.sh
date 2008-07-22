@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# psxc-unpack.sh v2.2 (c) psxc//2008
+# psxc-unpack.sh v2.3 (c) psxc//2008
 ####################################
 #
 # This simple little thingy extracts files in a dir and removes the
@@ -141,6 +141,7 @@ RDIR=""
 }
 [[ $RUN_NOW -ne 1 && -z "$(cat $RDIR/$LOGFILE)" ]] && exit 0
 [[ -z "$(cat $RDIR/$LOGFILE)" ]] && exit 0
+[[ $RUN_NOW -ne 1 && $found -eq 1 ]] && exit 0
 [[ -e "$RDIR/$LOGFILE.pid" ]] && {
   oldpid=$(cat "$RDIR/$LOGFILE.pid")
   for pid in $(ps ax | awk '{print $1}'); do

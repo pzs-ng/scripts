@@ -22,6 +22,8 @@ v2.2 - Fixed newly introduced bug with normal .rar archives by changing default
        FILETYPES variable to "\.[Rr][Aa][Rr]$ \.001$". Fixed bug that caused
        errors to appear in STDOUT on last archive. Script now works in ANY dir
        when executed with the RUN_NOW trigger.
+v2.3 - Another newly introduced bug squashed - now won't start automatically on
+       last file uploaded in a release.
 
 // psxc(c)2006-2008
 
