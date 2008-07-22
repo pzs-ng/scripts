@@ -18,6 +18,10 @@ v2.0 - more or less a rewrite of the script - should be quicker and handle "bad"
        archives better (like archives with an identical named archive inside).
        Renamed SKIPDIRS to IGNOREDIRS (sorry daxxar)
 v2.1 - Fixed bug with *.partXX.rar archives. Added support for zip-extraction.
+v2.2 - Fixed newly introduced bug with normal .rar archives by changing default
+       FILETYPES variable to "\.[Rr][Aa][Rr]$ \.001$". Fixed bug that caused
+       errors to appear in STDOUT on last archive. Script now works in ANY dir
+       when executed with the RUN_NOW trigger.
 
 // psxc(c)2006-2008
 

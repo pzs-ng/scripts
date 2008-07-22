@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# psxc-unpack.sh v2.1 (c) psxc//2008
+# psxc-unpack.sh v2.2 (c) psxc//2008
 ####################################
 #
 # This simple little thingy extracts files in a dir and removes the
@@ -31,7 +31,7 @@
 #   custom-unpack 1
 
 # neeed bins:
-# unrar ps grep cat awk head ls echo mv tr chmod wc basename tr (nice)
+# unrar uzip sort ps grep cat awk head ls echo mv tr chmod wc basename tr (nice)
 
 #####################################################
 # CONFIGURATION
@@ -72,7 +72,7 @@ RM="echo rm"
 RMDIR="echo rm -fR"
 
 # rar filetypes. should be fine as is.
-FILETYPES="\.[Rr0-9][aA0-9][rR0-9]$"
+FILETYPES="\.[Rr][Aa][Rr]$ \.001$"
 
 # subdirs. should be fine as is.
 SUBDIRS="^[Cc][Dd][0-9a-zA-Z]$ ^[Dd][Vv][Dd][0-9a-zA-Z]$ ^[Ss][Uu][Bb][Ss]*$"
@@ -129,18 +129,18 @@ RDIR=""
 [[ -e $RDIR/$UNPACK_CONF ]] && source $RDIR/$UNPACK_CONF
 [[ ! -e $RDIR/$LOGFILE ]] && :>$RDIR/$LOGFILE && chmod 666 $RDIR/$LOGFILE
 [[ ! -w $RDIR/$LOGFILE ]] && echo "HELP! UNABLE TO LOG DIRS! CHECK PERMS" && exit 1
-[[ ! -e $GLROOT/$LOGFILE && -e $SITEDIR ]] && {
+[[ "$(echo "$MAGICWORD" | tr 'A-Z' 'a-z')" == "$(echo "$1" | tr 'A-Z' 'a-z')" ]] && RUN_NOW=1
+[[ -e $SITEDIR ]] && {
   for DNAME in $DIRS; do
     [[ ! -z "$(echo $PWD | grep $DNAME)" ]] && {
       found=1
        break
     }
   done
-  [[ $found -eq 1 ]] && echo "$PWD" >>$RDIR/$LOGFILE
+  [[ $found -eq 1 || RUN_NOW -eq 1 ]] && echo "$PWD" >>$RDIR/$LOGFILE
 }
-[[ "$(echo "$MAGICWORD" | tr 'A-Z' 'a-z')" == "$(echo "$1" | tr 'A-Z' 'a-z')" ]] && RUN_NOW=1
-[[ $RUN_NOW -ne 1 && ! -e $GLROOT/$LOGFILE && -e $SITEDIR ]] && exit 0
-[[ -z "$(cat $RDIR/$LOGFILE)" ]] && rm "$RDIR/$LOGFILE" && exit 0
+[[ $RUN_NOW -ne 1 && -z "$(cat $RDIR/$LOGFILE)" ]] && exit 0
+[[ -z "$(cat $RDIR/$LOGFILE)" ]] && exit 0
 [[ -e "$RDIR/$LOGFILE.pid" ]] && {
   oldpid=$(cat "$RDIR/$LOGFILE.pid")
   for pid in $(ps ax | awk '{print $1}'); do
@@ -253,7 +253,6 @@ while [ 1 ]; do
     RETMODE=$RET
     [[ $RET -ne 0 ]] && {
       echo "Error in archive $RDIR/$DNAME/$EXTRACTNAME - skipping this dir."
-#      [[ "$UNPACKERR" != "" ]] && :>"$RDIR/$DNAME/$PARENT/$UNPACKERR" && chmod 666 "$RDIR/$DNAME/$PARENT/$UNPACKERR"
       [[ "$UNPACKERR" != "" ]] && :>"$RDIR/$DNAME/$UNPACKERR" && chmod 666 "$RDIR/$DNAME/$UNPACKERR"
       break
     }

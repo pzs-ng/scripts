@@ -52,7 +52,7 @@ RM="echo rm"
 RMDIR="echo rm -fR"
 
 # rar filetypes. should be fine as is.
-FILETYPES="\.[Rr0-9][aA0-9][rR0-9]$"
+FILETYPES="\.[Rr][Aa][Rr]$ \.001$"
 
 # subdirs. should be fine as is.
 SUBDIRS="^[Cc][Dd][0-9a-zA-Z]$ ^[Dd][Vv][Dd][0-9a-zA-Z]$ ^[Ss][Uu][Bb][Ss]*$"
