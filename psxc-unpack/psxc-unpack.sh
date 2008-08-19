@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# psxc-unpack.sh v2.3 (c) psxc//2008
+# psxc-unpack.sh v2.4 (c) psxc//2008
 ####################################
 #
 # This simple little thingy extracts files in a dir and removes the
@@ -56,6 +56,13 @@ LOGFILE=/tmp/psxc-unpack.log
 
 # glftpd's logfile (within chroot) - used for announces.
 GLLOG=/ftp-data/logs/glftpd.log
+
+# a logfile which list all successfully unpacked dirs.
+COMPLETELOG=/tmp/psxc-unpack-complete.log
+
+# the default logformat (below in bsd format) gives the date
+# an hour into the future.
+LOGDATEFORMAT="-v+1H +%s"
 
 # in what dirs should this script be executed?
 DIRS="/site/XVID /site/DVDR"
@@ -213,7 +220,7 @@ while [ 1 ]; do
     done
     [[ $SMATCH -eq 1 ]] && PARENT="../" || PARENT=""
     BASENAME="$(echo "$EXTRACTNAME" | sed "s/\.[Pp][Aa][Rr][Tt][0-9]*\././" | sed "s/$BASETYPE//")"
-    unrar vt -v -- "$EXTRACTNAME" | grep -- "$BASENAME" | grep -v "^ " | cut -d ' ' -f 2- >$RDIR/$LOGFILE.lst
+    unrar vt -v -- "$EXTRACTNAME" | grep -- "$BASENAME" | grep -v "^ " | grep -o -- "$BASENAME.*" >$RDIR/$LOGFILE.lst
     mkdir ./.psxctmp
     $UNRAR "$EXTRACTNAME" ./.psxctmp/
     RET=$?
@@ -259,7 +266,15 @@ while [ 1 ]; do
     }
     [[ ! -z "$(echo $RM | grep "echo")" ]] && echo "running in testmode - unable to test for more than one release in the dir w/o going into endless loop. breaking." && break
   done
-  [[ ! -z "$GLLOG" && $RETMODE -eq 0 ]] && echo "$(date "+%a %b %e %T %Y") PSXCUNPACK: {$DNAME}" >>$RDIR/$GLLOG
+  [[ ! -z "$GLLOG" && $RETMODE -eq 0 ]] && { 
+    echo "$(date "+%a %b %e %T %Y") PSXCUNPACK: {$DNAME}" >>$RDIR/$GLLOG
+    curpath="$PWD"
+    cd "$RDIR/$DNAME/$PARENT"
+    destpath="$PWD"
+    cd "$curpath"
+    [[ ! -z "$(echo "$destpath" | grep -- "^$GLROOT")" ]] && destpath="$(echo "$GLROOT/$destpath" | tr -s "/")"
+    [[ ! -z "$LOGDATEFORMAT" && ! -z "$COMPLETELOG" ]] &&  echo "$(date $LOGDATEFORMAT) $destpath" >>$RDIR/$COMPLETELOG
+  }
   [[ ! -z "$GLLOG" && $RETMODE -ne 0 ]] && echo "$(date "+%a %b %e %T %Y") PSXCUNPACKERROR: {$DNAME}" >>$RDIR/$GLLOG
 done
 [[ $CHMOD_DIRS -eq 1 && $RET -eq 0 ]] && {

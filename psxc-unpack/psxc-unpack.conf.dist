@@ -87,6 +87,13 @@ UNZIP="echo nice -n 20 unzip"
 # The first ''%%'' encountered will be replaced with the name of the archive.
 UNPACKERROR="  PSXC-UNPACK - FAILED TO UNPACK ARCHIVE (%%)  "
 
+# a logfile which list all successfully unpacked dirs.
+COMPLETELOG=/tmp/psxc-unpack-complete.log
+
+# the default logformat (below in bsd format) gives the date
+# an hour into the future.
+LOGDATEFORMAT="-v+1H +%s"
+
 
 ##################################################
 # psxc-unpack_all.sh specific settings           #
