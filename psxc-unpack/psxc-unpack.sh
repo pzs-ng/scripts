@@ -272,7 +272,7 @@ while [ 1 ]; do
     cd "$RDIR/$DNAME/$PARENT"
     destpath="$PWD"
     cd "$curpath"
-    [[ ! -z "$(echo "$destpath" | grep -- "^$GLROOT")" ]] && destpath="$(echo "$GLROOT/$destpath" | tr -s "/")"
+    [[ -z "$(echo "$destpath" | grep -- "^$GLROOT")" ]] && destpath="$(echo "$GLROOT/$destpath" | tr -s "/")"
     [[ ! -z "$LOGDATEFORMAT" && ! -z "$COMPLETELOG" ]] &&  echo "$(date $LOGDATEFORMAT) $destpath" >>$RDIR/$COMPLETELOG
   }
   [[ ! -z "$GLLOG" && $RETMODE -ne 0 ]] && echo "$(date "+%a %b %e %T %Y") PSXCUNPACKERROR: {$DNAME}" >>$RDIR/$GLLOG
