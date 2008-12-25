@@ -44,18 +44,15 @@ while [ 1 ]; do
     rname="$(echo "$releasename" | sed -E "s/[\.|_]$word$//")"
     [[ "$releasename" != "$rname" ]] && {
       releasename=$rname
-  echo "1 $whilename"
       break
     }
   done
-  echo "2 $whilename"
   [[ "$releasename" == "$whilename" ]] && {
     break
   }
 done
 releasename="$(echo "$releasename" | sed -E "s/[\.|_][12][0-9][0-9][0-9]$//" | tr -d '\.')"
-echo $releasename
-output="$(wget -o /dev/null -O - "http://www.apple.com/trailers/home/scripts/quickfind.php?q=$releasename")"
+output="$(wget --ignore-length --timeout=10 -o /dev/null -O - "http://www.apple.com/trailers/home/scripts/quickfind.php?q=$releasename")"
 outparse="$(echo $output | tr -d '\"' | tr ',' '\n')"
 iserror=$(echo $outparse | grep -i "error:true")
 [[ "$iserror" != "" ]] && {
@@ -64,10 +61,9 @@ iserror=$(echo $outparse | grep -i "error:true")
 }
 poster="$(echo "$outparse" | grep -i "^poster:" | cut -d ':' -f 2- | tr -d '\\')"
 location="http://www.apple.com$(echo "$outparse" | grep -i "^location:" | cut -d ':' -f 2- | tr -d '\\')"
-echo "poster: $poster"
-#echo "location: $location"
 
-output2="$(wget --convert-links -o /dev/null -O - "$location")"
+#output2="$(wget --ignore-length --timeout=10 --convert-links -o /dev/null -O - $location)"
+output2="$(wget --ignore-length --timeout=10 -o /dev/null -O - $location)"
 output2parse="$(echo $output2 | tr ' \?' '\n' | grep -i "^href=.*\.mov[\"]*$" | tr -d '\"' | cut -d '=' -f 2-)"
 for quality in $trailerquality; do
   urllink=$(echo "$output2parse" | grep -i "${quality}.mov$" | head -n 1)
@@ -79,16 +75,15 @@ done
   echo "Failed to fetch movielink"
   exit 0
 }
-echo $urllink
 
 # download trailer and picture
 [[ "$downloadimage" != "" && "$poster" != "" ]] && {
   echo "Downloading posterimage as $imagename"
-  wget -o /dev/null -O $imagename $poster
+  wget --ignore-length --timeout=10 -o /dev/null -O $imagename $poster
 }
 
 [[ "$trailerquality" != "" && "$urllink" != "" ]] && {
-  wget -o /dev/null -O the.fake $urllink
+  wget --ignore-length --timeout=10 -o /dev/null -O the.fake $urllink
   fakelinkname=$(echo $urllink | tr '/' '\n' | grep -i "\.mov$")
   reallinkname=$(cat the.fake | tr -c 'a-zA-Z0-9\-\.\_' '\n' | grep -i "\.mov")
   reallink=$(echo $urllink | sed "s|$fakelinkname|$reallinkname|")
@@ -97,8 +92,8 @@ echo $urllink
     trailername=$(echo $urllink | tr '/' '\n' | grep -i "mov$" | tail -n 1)
   }
   echo "Downloading trailer in $quality quality as $trailername"
-  wget -o /dev/null -O $trailername $reallink
+  wget --ignore-length --timeout=10 -o /dev/null -O $trailername $reallink
 }
 echo "done"
 exit 0
-#echo "$output2parse"
+
