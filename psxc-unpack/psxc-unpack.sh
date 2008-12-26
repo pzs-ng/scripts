@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# psxc-unpack.sh v2.4 (c) psxc//2008
+# psxc-unpack.sh v2.5 (c) psxc//2008
 ####################################
 #
 # This simple little thingy extracts files in a dir and removes the
@@ -122,6 +122,10 @@ CHMOD_DIRS=1
 # Forbidden chars include / & \ $ [:space:] (they will be replaced with _)
 # The first ''%%'' encountered will be replaced with the name of the archive.
 UNPACKERROR="  PSXC-UNPACK - FAILED TO UNPACK ARCHIVE (%%)  "
+
+# Script to execute after sucessful unpack - use "" to disable.
+# One script only.
+COMPLETESCRIPT="/bin/psxc-trailer.sh"
 
 ################################################################
 # CODE BELOW - PLEASE IGNORE
@@ -274,6 +278,15 @@ while [ 1 ]; do
     cd "$curpath"
     [[ -z "$(echo "$destpath" | grep -- "^$GLROOT")" ]] && destpath="$(echo "$GLROOT/$destpath" | tr -s "/")"
     [[ ! -z "$LOGDATEFORMAT" && ! -z "$COMPLETELOG" ]] &&  echo "$(date $LOGDATEFORMAT) $destpath" >>$RDIR/$COMPLETELOG
+    [[ ! -z "$COMPLETESCRIPT" && -x $COMPLETESCRIPT ]] && {
+      echo "psxc-unpack: Executing script... please wait."
+      $COMPLETESCRIPT
+      [[ $? -eq 0 ]] && {
+        echo "psxc-unpack: Executing script done."
+      } || {
+        echo "psxc-unpack: Script returned with an error."
+      }
+    }
   }
   [[ ! -z "$GLLOG" && $RETMODE -ne 0 ]] && echo "$(date "+%a %b %e %T %Y") PSXCUNPACKERROR: {$DNAME}" >>$RDIR/$GLLOG
 done

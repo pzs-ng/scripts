@@ -94,6 +94,9 @@ COMPLETELOG=/tmp/psxc-unpack-complete.log
 # an hour into the future.
 LOGDATEFORMAT="-v+1H +%s"
 
+# Script to execute after sucessful unpack - use "" to disable.
+# One script only.
+COMPLETESCRIPT="/bin/psxc-trailer.sh"
 
 ##################################################
 # psxc-unpack_all.sh specific settings           #

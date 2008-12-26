@@ -25,6 +25,8 @@ v2.2 - Fixed newly introduced bug with normal .rar archives by changing default
 v2.3 - Another newly introduced bug squashed - now won't start automatically on
        last file uploaded in a release.
 v2.4 - another bug gone, and support for a simple move-script.
+v2.5 - added support for completescript - a script to be executed after
+       successful unpacking of release.
 
 // psxc(c)2006-2008
 
