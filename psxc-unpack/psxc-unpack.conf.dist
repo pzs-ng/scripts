@@ -55,7 +55,7 @@ RMDIR="echo rm -fR"
 FILETYPES="\.[Rr][Aa][Rr]$ \.001$"
 
 # subdirs. should be fine as is.
-SUBDIRS="^[Cc][Dd][0-9a-zA-Z]$ ^[Dd][Vv][Dd][0-9a-zA-Z]$ ^[Ss][Uu][Bb][Ss]*$"
+SUBDIRS="^[CcDdSs][DdVvIiUu][DdSsBb]?[CcKkSs]?[0-9A-Za-z]?[0-9A-Za-z]?$"
 
 # how your completedirs look like. (This is regexp style, so keep the .*)
 COMPLETEDIR=".*\[.*\].*[-].[Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ee].*\[.*\].*"

@@ -27,6 +27,8 @@ v2.3 - Another newly introduced bug squashed - now won't start automatically on
 v2.4 - another bug gone, and support for a simple move-script.
 v2.5 - added support for completescript - a script to be executed after
        successful unpacking of release.
+v2.6 - fixed a small bug when trying to cd .. when pwd was deleted.
+     - changed default SUBDIRS string to something better.
 
 // psxc(c)2006-2008
 

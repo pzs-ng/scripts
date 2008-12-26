@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# psxc-unpack.sh v2.5 (c) psxc//2008
+# psxc-unpack.sh v2.6 (c) psxc//2008
 ####################################
 #
 # This simple little thingy extracts files in a dir and removes the
@@ -82,7 +82,7 @@ RMDIR="echo rm -fR"
 FILETYPES="\.[Rr][Aa][Rr]$ \.001$"
 
 # subdirs. should be fine as is.
-SUBDIRS="^[Cc][Dd][0-9a-zA-Z]$ ^[Dd][Vv][Dd][0-9a-zA-Z]$ ^[Ss][Uu][Bb][Ss]*$"
+SUBDIRS="^[CcDdSs][DdVvIiUu][DdSsBb]?[CcKkSs]?[0-9A-Za-z]?[0-9A-Za-z]?$"
 
 # how your completedirs look like. (This is regexp style, so keep the .*)
 COMPLETEDIR=".*\[.*\].*[-].[Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ee].*\[.*\].*"
@@ -273,9 +273,12 @@ while [ 1 ]; do
   [[ ! -z "$GLLOG" && $RETMODE -eq 0 ]] && { 
     echo "$(date "+%a %b %e %T %Y") PSXCUNPACK: {$DNAME}" >>$RDIR/$GLLOG
     curpath="$PWD"
-    cd "$RDIR/$DNAME/$PARENT"
+    [[ "$PARENT" != "" ]]&& {
+      cd $(dirname "$RDIR/$DNAME")
+#    cd "$RDIR/$DNAME/$PARENT"
+    }
     destpath="$PWD"
-    cd "$curpath"
+#    cd "$curpath"
     [[ -z "$(echo "$destpath" | grep -- "^$GLROOT")" ]] && destpath="$(echo "$GLROOT/$destpath" | tr -s "/")"
     [[ ! -z "$LOGDATEFORMAT" && ! -z "$COMPLETELOG" ]] &&  echo "$(date $LOGDATEFORMAT) $destpath" >>$RDIR/$COMPLETELOG
     [[ ! -z "$COMPLETESCRIPT" && -x $COMPLETESCRIPT ]] && {
