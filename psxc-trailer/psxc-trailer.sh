@@ -7,7 +7,7 @@
 # Takes one argument (path to releasedir). If no arg is given, it uses
 # current path.
 #
-# Required bins are wget, sed, echo, tr, cut, tail, grep, bash
+# Required bins are wget, sed, echo, tr, cut, tail, grep, bash, wc
 
 # debug option. do not remove the hash unless you know what you're doing
 #set -x -v
@@ -16,7 +16,7 @@
 PATH=$PATH:/bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin:/usr/local/sbin:/glftpd/bin:$HOME/bin
 
 # quality of trailer. Choose between
-# 320 (lowest), 480, 640, 480p, 720p, 1080p (highest)
+# 320 (smallest), 480, 640, 480p, 720p, 1080p (highest)
 # More than one quality setting is allowed - first found will be used
 # use "" to disable
 trailerquality="480 480p 320"
@@ -32,7 +32,11 @@ downloadimage="yes"
 imagename=folder.jpg
 
 # words to ignore - case does not matter
-removewords="XViD SCREENER SCR DVDSCR DCDSCREENER DiVX H264 x264 REPACK TS TELESYNC TC TELECINE R5 DVDR DVDRip 720p 1080p BluRay BluRay PROPER LINE CAM HDTV LiMiTED"
+removewords="XViD SCREENER SCR DVDSCR DCDSCREENER DiVX H264 x264 REPACK TS TELESYNC TC TELECINE R5 DVDR DVDRiP 720p 1080p BluRay BluRay PROPER LINE CAM HDTV LiMiTED UNRATED READNFO BRRiP AC3 DTS"
+
+# you can define how accurate you wish the search to be. lower the number
+# if you need more results, or increase if you get a lot of false positives
+accuracy=2
 
 # code below
 [[ "$1" != "" && -d "$1" ]] && cd $1
@@ -51,22 +55,55 @@ while [ 1 ]; do
     break
   }
 done
-releasename="$(echo "$releasename" | sed -E "s/[\.|_][12][0-9][0-9][0-9]$//" | tr -d '\.')"
-output="$(wget --ignore-length --timeout=10 -o /dev/null -O - "http://www.apple.com/trailers/home/scripts/quickfind.php?q=$releasename")"
-outparse="$(echo $output | tr -d '\"' | tr ',' '\n')"
-iserror=$(echo $outparse | grep -i "error:true")
-[[ "$iserror" != "" ]] && {
-  echo "An error occured. Unable to parse output"
-  exit 1
-}
+
+orgrelname=$releasename
+countdot=$(echo $releasename | tr -cd '\.' | wc -c)
+let countdot=countdot-0
+
+while [ 1 ]; do
+  releasename="$(echo "$releasename" | sed -E "s/[\.|_][12][0-9][0-9][0-9]$//" | tr -d '\.')"
+  output="$(wget --ignore-length --timeout=10 -o /dev/null -O - "http://www.apple.com/trailers/home/scripts/quickfind.php?q=$releasename")"
+  outparse="$(echo $output | tr -d '\"' | tr ',' '\n')"
+  iserror=$(echo $outparse | grep -i "error:true")
+  isresult=$(echo $outparse | grep -i "results:\[\]")
+  [[ "$iserror" != "" ]] && {
+    echo "An error occured. Unable to parse output"
+    exit 1
+  }
+  [[ "$isresult" == "" ]] && {
+    break
+  }
+  [[ $countdot -le $accuracy ]] && {
+    break
+  }
+  releasename=$(echo $orgrelname | cut -d '.' -f 1-$countdot)
+  let countdot=countdot-1
+done
 poster="$(echo "$outparse" | grep -i "^poster:" | cut -d ':' -f 2- | tr -d '\\')"
 location="http://www.apple.com$(echo "$outparse" | grep -i "^location:" | cut -d ':' -f 2- | tr -d '\\')"
 
-#output2="$(wget --ignore-length --timeout=10 --convert-links -o /dev/null -O - $location)"
 output2="$(wget --ignore-length --timeout=10 -o /dev/null -O - $location)"
-output2parse="$(echo $output2 | tr ' \?' '\n' | grep -i "^href=.*\.mov[\"]*$" | tr -d '\"' | cut -d '=' -f 2-)"
+output2parse="$(echo $output2 | tr ' \?' '\n' | grep -E -i "^href=.*\.mov[\"]*$|^href=.*small[_]?.*\.html[\"]*|^href=.*medium[_]?.*\.html[\"]*|^href=.*large[_]?.*\.html[\"]*|^href=.*low[_]?.*\.html[\"]*|^href=.*high[_]?.*\.html[\"]?.*" | tr -d '\"' | cut -d '=' -f 2-)"
 for quality in $trailerquality; do
   urllink=$(echo "$output2parse" | grep -i "${quality}.mov$" | head -n 1)
+  [[ "$urllink" != "" ]] && {
+    break
+  }
+  sublink=""
+  [[ "$quality" == "320" && "$(echo "$output2parse" | grep -E -i "small[_]?.*.html|low[_]?.*.html")" != "" ]] && {
+    sublink=${location}$(echo "$output2parse" | grep -E -i "small.html[_]?.*|low[_]?.*.html" | tr '\>\<\ ' '\n' | head -n 1)
+  }
+  [[ "$quality" == "480" && "$(echo "$output2parse" | grep -E -i "medium[_]?.*.html")" != "" ]] && {
+    sublink=${location}$(echo "$output2parse" | grep -E -i "medium[_]?.*.html" | tr '\>\<\ ' '\n' | head -n 1)
+  }
+  [[ "$quality" == "640" && "$(echo "$output2parse" | grep -E -i "large[_]?.*.html|high[_]?.*.html")" != "" ]] && {
+    sublink=${location}$(echo "$output2parse" | grep -E -i "large[_]?.*.html|high[_]?.*.html" | tr '\>\<\ ' '\n' | head -n 1)
+  }
+  [[ "$sublink" != "" ]] && {
+    output3="$(wget --ignore-length --timeout=10 -o /dev/null -O - $sublink)"
+    output3parse="$(echo $output3 | tr -c 'a-zA-Z/:\._0-9\-' '\n' | grep -E -i "\.mov$")"
+    urllink=$(echo "$output3parse" | grep -i "\.mov$" | head -n 1)
+  }
   [[ "$urllink" != "" ]] && {
     break
   }
