@@ -1,13 +1,14 @@
 #!/bin/bash
 
-# psxc-trailer v0.2.2008.12.26
+# psxc-trailer v0.3.2008.12.26
 ##############################
 #
 # Small script that fetches the qt trailer and image for movies.
 # Takes one argument (path to releasedir). If no arg is given, it uses
 # current path.
 #
-# Required bins are wget, sed, echo, tr, cut, head, tail, grep, bash, wc
+# Required bins are:
+# wget, sed, echo, tr, cut, head, tail, grep, bash, wc, basename, dirname
 #
 # Use as a site command:
 #   Make sure all required bins are availible in chroot.
@@ -51,8 +52,15 @@ accuracy=1
 #
 ###### ADVANCED CONFIG - USUALLY NO NEED TO CHANGE THESE VARS ######
 #
+# subdirs - regex to match. The default checks for cd, dvd, disk, disc, subs.
+subdirs="^[CcDdSs][DdVvIiUu][DdSsBb]?[CcKkSs]?[0-9A-Za-z]?[0-9A-Za-z]?$"
+
 # words to ignore/remove from search - case does not matter
 removewords="XViD DiVX H264 x264 DVDR 720p 1080p BluRay BluRay BRRiP HDTV CAM TC TELECINE TS TELESYNC SCREENER R5 SCR DVDSCR DVDSCREENER DVDRiP REPACK PROPER INTERNAL LiMiTED UNRATED READNFO LINE DiRECT SYNCFIX AC3 DTS DTS-ES"
+
+# movie-releases usually have at least one of the 'removewords' listed in the dirname.
+# should we exit if we cannot find one? set to "yes" if we do, or "" if not.
+checkwords="yes"
 
 # wget output - usually set to /dev/null but can be directed to a file for debug purposes
 wgetoutput=/dev/null
@@ -71,6 +79,9 @@ PATH=$PATH:/bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin:/usr/local/sbin:/glftpd/
 # code below
 [[ "$1" != "" && -d "$1" ]] && {
   cd $1
+}
+[[ "$(basename "$PWD" | grep -E "$subdirs")" != "" ]] && {
+  cd $(dirname $PWD)
 }
 founddir=""
 for validdir in $validdirs; do
@@ -97,6 +108,7 @@ while [ 1 ]; do
     rname="$(echo "$releasename" | sed -E "s/[\.|_]$word$//")"
     [[ "$releasename" != "$rname" ]] && {
       releasename=$rname
+      ismovie="yes"
       break
     }
   done
@@ -104,6 +116,11 @@ while [ 1 ]; do
     break
   }
 done
+
+[[ "$ismovie" == "" && "$checkwords" != "" ]] && {
+  echo "Not in a moviedir - not searching for a trailer"
+  exit 0
+}
 
 echo "Trying to download trailer for \"$(echo $releasename | tr '\.' ' ')\"..."
 orgrelname=$releasename
