@@ -30,7 +30,13 @@
 #
 # Can probably also be used with total-rescan and other scripts, but this is
 # untested.
-
+#
+# NOTE FOR LINUX USER:
+#   If this script does not work as a site command, and the command
+#   'chroot /glftpd /bin/wget' give you a 'Resolving failed' error, try the
+#   following: 
+#     cp /lib/libnss_dns* /glftpd/lib/
+#
 #
 ################# CONFIG OPTIONS #################
 #
