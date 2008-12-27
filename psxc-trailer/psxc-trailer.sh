@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# psxc-trailer v0.3.2008.12.26
+# psxc-trailer v0.4.2008.12.27
 ##############################
 #
 # Small script that fetches the qt trailer and image for movies.
@@ -8,7 +8,7 @@
 # current path.
 #
 # Required bins are:
-# wget, sed, echo, tr, cut, head, tail, grep, bash, wc, basename, dirname
+# wget, sed, echo, tr, cut, head, tail, grep, bash, wc, basename, dirname, uname
 #
 # Use as a site command:
 #   Make sure all required bins are availible in chroot.
@@ -19,6 +19,14 @@
 # Use as a nfo-script in pzs-ng:
 #   Not really recommended as it may take a few seconds for the script to
 #   download the trailer.
+#
+# Use with psxc-unpack:
+#   Works fine with latest release. Since psxc-unpack is run inside and outside
+#   chroot this script must be accessible (by ln -s or otherwise) both ways.
+#
+# Use with psxc-imdb:
+#   Not tested, but should work fine. This script will discard $1 (first arg)
+#   if it cannot use it and instead work with $PWD.
 #
 # Can probably also be used with total-rescan and other scripts, but this is
 # untested.
@@ -38,6 +46,16 @@ trailerquality="480p 640 480 320"
 # what name should be used on the trailer?
 # use "" to keep name as is.
 trailername="trailer.mov"
+
+# should all trailers be downloaded to a special dir? The default is
+# "" which downloads to releasedir. This variable actually takes two
+# dirs - one for chroot and one for outside chroot.
+# NOTE: if both trailerdir and trailername is set, the name of the trailer
+# will be named "name.of.searched.for.movie.mov".
+# If none of the trailerdirs are found, the trailer will be downloaded
+# in the releasedir.
+# example: trailerdirs="/site/trailers /glftpd/site/trailers"
+trailerdirs=""
 
 # download trailer image? ("yes"=yes, ""=no)
 downloadimage="yes"
@@ -71,6 +89,11 @@ wgettemp=the.fake
 # make sure we have access to all bins needed. Should not need to change this
 PATH=$PATH:/bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin:/usr/local/sbin:/glftpd/bin:$HOME/bin
 
+# We use extended regex in sed - the switch differ in bsd and linux. The script has a autodetect
+# feature, but if that fails you may need to set the switch manually. Set to "-E on BSD and
+# "-r" on linux. The default is "".
+sedswitch=""
+
 # debug option. do not remove the hash unless you know what you're doing
 #set -x -v
 
@@ -94,6 +117,18 @@ done
   echo "Not in a moviedir - not searching for a trailer"
   exit 0
 }
+[[ "$sedswitch" == "" && "$(uname | grep -i "bsd$")" == "" ]] && {
+  sedswitch="-r"
+} || {
+  sedswitch="-E"
+}
+trailerdir=""
+for trailer in $trailerdirs; do
+  [[ -d "$trailer" ]] && {
+    trailerdir=${trailer}/
+    break
+  }
+done
 count=$(echo $PWD | tr -cd '-' | wc -c)
 let count=count+0
 [[ count -ge 1 ]] && {
@@ -105,7 +140,7 @@ while [ 1 ]; do
   whilename=$releasename
   for word in $removewords; do
     word=$(echo $word | tr 'A-Z' 'a-z')
-    rname="$(echo "$releasename" | sed -E "s/[\.|_]$word$//")"
+    rname="$(echo "$releasename" | sed $sedswitch "s/[\.|_]$word$//")"
     [[ "$releasename" != "$rname" ]] && {
       releasename=$rname
       ismovie="yes"
@@ -128,7 +163,7 @@ countdot=$(echo $releasename | tr -cd '\.' | wc -c)
 let countdot=countdot-0
 
 while [ 1 ]; do
-  releasename="$(echo "$releasename" | sed -E "s/[\.|_][12][0-9][0-9][0-9]$//" | tr -d '\.')"
+  releasename="$(echo "$releasename" | sed $sedswitch "s/[\.|_][12][0-9][0-9][0-9]$//" | tr -d '\.')"
   output="$(wget --ignore-length --timeout=10 -o $wgetoutput -O - "http://www.apple.com/trailers/home/scripts/quickfind.php?q=$releasename")"
   outparse="$(echo $output | tr -d '\"' | tr ',' '\n')"
   iserror=$(echo $outparse | grep -i "error:true")
@@ -212,11 +247,14 @@ done
   reallinkname=$(cat $wgettemp | tr -c 'a-zA-Z0-9\-\.\_' '\n' | grep -i "\.mov")
   reallink=$(echo $urllink | sed "s|$fakelinkname|$reallinkname|")
   rm -f $wgettemp
+  [[ "$trailerdir" != "" ]] && {
+    trailername=$(echo ${orgrelname}.mov | tr -c 'a-zA-Z0-9\-\.\n' '.')
+  }
   [[ "$trailername" == "" ]] && {
     trailername=$(echo $urllink | tr '/' '\n' | grep -i "mov$" | tail -n 1)
   }
   echo "Downloading trailer in $quality quality as $trailername"
-  wget --ignore-length --timeout=10 -o $wgetoutput -O $trailername $reallink
+  wget --ignore-length --timeout=10 -o $wgetoutput -O ${trailerdir}${trailername} $reallink
 }
 echo "done"
 exit 0
