@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# psxc-trailer v0.4.2008.12.27
+# psxc-trailer v0.5.2008.12.28
 ##############################
 #
 # Small script that fetches the qt trailer and image for movies.
@@ -33,24 +33,27 @@
 #
 # NOTE FOR LINUX USER:
 #   If this script does not work as a site command, and the command
-#   'chroot /glftpd /bin/wget' give you a 'Resolving failed' error, try the
-#   following: 
+#   'chroot /glftpd /bin/wget http://www.apple.com' give you a 'Resolving failed'
+#   error, try the following:
 #     cp /lib/libnss_dns* /glftpd/lib/
 #
 #
 ################# CONFIG OPTIONS #################
 #
 # What dirs to execute in (no wildcards). Use "/" to include all.
-validdirs="/site/MOVIES/ /site/FILMS/"
+# Example: validdirs="/site/MOVIES/ /site/FILMS/"
+validdirs="/"
 
 # quality of trailer. Choose between
 # 320 (smallest), 480, 640, 480p, 720p, 1080p (highest)
 # More than one quality setting is allowed - first found will be used
 # use "" to disable
+# Example: trailerquality="480p 640 480 320"
 trailerquality="480p 640 480 320"
 
 # what name should be used on the trailer?
 # use "" to keep name as is.
+# Example: trailername="trailer.mov"
 trailername="trailer.mov"
 
 # should all trailers be downloaded to a special dir? The default is
@@ -60,18 +63,26 @@ trailername="trailer.mov"
 # will be named "name.of.searched.for.movie.mov".
 # If none of the trailerdirs are found, the trailer will be downloaded
 # in the releasedir.
-# example: trailerdirs="/site/trailers /glftpd/site/trailers"
+# Example: trailerdirs="/site/trailers /glftpd/site/trailers"
 trailerdirs=""
 
+# Should we download to both releasedir and trailerdir?
+# Set to "yes" to use both, and "" to use only one.
+# Example: usebothdirs="yes"
+usebothdirs=""
+
 # download trailer image? ("yes"=yes, ""=no)
+# Example: downloadimage=""
 downloadimage="yes"
 
 # if yes, what name is to be used?
+# Example: imagename="folder.jpg
 imagename=folder.jpg
 
 # you can define how accurate you wish the search to be. lower the number
 # if you need more results, or increase if you get a lot of false positives
-accuracy=1
+# Example: accuracy=1
+accuracy=2
 
 #
 ###### ADVANCED CONFIG - USUALLY NO NEED TO CHANGE THESE VARS ######
@@ -99,6 +110,9 @@ PATH=$PATH:/bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin:/usr/local/sbin:/glftpd/
 # feature, but if that fails you may need to set the switch manually. Set to "-E on BSD and
 # "-r" on linux. The default is "".
 sedswitch=""
+
+# We use certain flags with sed. Here we list the flags. Only change if you know what you're doing
+sedflags="--ignore-length --timeout=10"
 
 # debug option. do not remove the hash unless you know what you're doing
 #set -x -v
@@ -163,14 +177,14 @@ done
   exit 0
 }
 
-echo "Trying to download trailer for \"$(echo $releasename | tr '\.' ' ')\"..."
+echo "Looking up trailer for \"$(echo $releasename | tr '\.' ' ')\"..."
 orgrelname=$releasename
 countdot=$(echo $releasename | tr -cd '\.' | wc -c)
 let countdot=countdot-0
 
 while [ 1 ]; do
   releasename="$(echo "$releasename" | sed $sedswitch "s/[\.|_][12][0-9][0-9][0-9]$//" | tr -d '\.')"
-  output="$(wget --ignore-length --timeout=10 -o $wgetoutput -O - "http://www.apple.com/trailers/home/scripts/quickfind.php?q=$releasename")"
+  output="$(wget $sedflags -o $wgetoutput -O - "http://www.apple.com/trailers/home/scripts/quickfind.php?q=$releasename")"
   outparse="$(echo $output | tr -d '\"' | tr ',' '\n')"
   iserror=$(echo $outparse | grep -i "error:true")
   isresult=$(echo $outparse | grep -i "results:\[\]")
@@ -198,8 +212,8 @@ done
 poster="$(echo "$outparse" | grep -i "^poster:" | cut -d ':' -f 2- | tr -d '\\')"
 location="http://www.apple.com$(echo "$outparse" | grep -i "^location:" | cut -d ':' -f 2- | tr -d '\\' | tr ' ' '\n' | head -n 1)"
 
-output2="$(wget --ignore-length --timeout=10 -o $wgetoutput -O - $location)"
-output2parse="$(echo $output2 | tr ' \?' '\n' | grep -E -i "^href=.*\.mov[\"]*$|^href=.*small[_]?.*\.html[\"]*|^href=.*medium[_]?.*\.html[\"]*|^href=.*large[_]?.*\.html[\"]*|^href=.*low[_]?.*\.html[\"]*|^href=.*high[_]?.*\.html[\"]?.*" | tr -d '\"' | cut -d '=' -f 2-)"
+output2="$(wget $sedflags -o $wgetoutput -O - $location)"
+output2parse="$(echo $output2 | tr ' \?' '\n' | grep -v "/images/" | grep -E -i "^href=.*\.mov[\"]*$|^href=.*small[_]?.*\.html[\"]*|^href=.*medium[_]?.*\.html[\"]*|^href=.*large[_]?.*\.html[\"]*|^href=.*low[_]?.*\.html[\"]*|^href=.*high[_]?.*\.html[\"]?.*" | tr -d '\"' | cut -d '=' -f 2-)"
 #echo DEBUG 1: $output2parse
 #echo DEBUG 5: $location
 for quality in $trailerquality; do
@@ -209,15 +223,15 @@ for quality in $trailerquality; do
   }
   sublink=""
   [[ "$quality" == "320" && "$(echo "$output2parse" | tr ' ' '\n'  | grep -E -i "small[_]?.*.html|low[_]?.*.html")" != "" ]] && {
-    sublink=${location}$(echo "$output2parse" | grep -E -i "small.html[_]?.*|low[_]?.*.html" | tr '\>\<\ ' '\n' | head -n 1)
+    sublink=${location}$(echo "$output2parse" | grep -v "/images/" | grep -E -i "small.html[_]?.*|low[_]?.*.html" | tr '\>\<\ ' '\n' | head -n 1)
     movsearch="\.mov\$"
   }
   [[ "$quality" == "480" && "$(echo "$output2parse" | tr ' ' '\n' | grep -E -i "medium[_]?.*.html")" != "" ]] && {
-    sublink=${location}$(echo "$output2parse" | grep -E -i "medium[_]?.*.html" | tr '\>\<\ ' '\n' | head -n 1)
+    sublink=${location}$(echo "$output2parse" | grep -v "/images/" | grep -E -i "medium[_]?.*.html" | tr '\>\<\ ' '\n' | head -n 1)
     movsearch="\.mov\$"
   }
   [[ "$quality" == "640" && "$(echo "$output2parse" | tr ' ' '\n'  | grep -E -i "large[_]?.*.html|high[_]?.*.html")" != "" ]] && {
-    sublink=${location}$(echo "$output2parse" | grep -E -i "large[_]?.*.html|high[_]?.*.html" | tr '\>\<\ ' '\n' | head -n 1)
+    sublink=${location}$(echo "$output2parse" | grep -v "/images/" | grep -E -i "large[_]?.*.html|high[_]?.*.html" | tr '\>\<\ ' '\n' | head -n 1)
     movsearch="\.mov\$"
   }
   [[ "$quality" == "480p" || "$quality" == "720p" || "$quality" == "1080p" ]] && {
@@ -226,9 +240,9 @@ for quality in $trailerquality; do
   }
   #echo DEBUG 4: $sublink
   [[ "$sublink" != "" ]] && {
-    output3="$(wget --ignore-length --timeout=10 -o $wgetoutput -O - $sublink)"
+    output3="$(wget $sedflags -o $wgetoutput -O - $sublink)"
     output3parse="$(echo $output3 | tr -c 'a-zA-Z/:\._0-9\-' '\n' | grep -E -i "$movsearch")"
-    urllink=$(echo "$output3parse" | grep -i "\.mov$" | head -n 1)
+    urllink=$(echo "$output3parse" | grep -v "/images/" | grep -i "\.mov$" | head -n 1)
     #echo DEBUG 2: $output3parse
   }
   [[ "$urllink" != "" ]] && {
@@ -242,26 +256,42 @@ done
 }
 
 # download trailer and picture
-[[ "$downloadimage" != "" && "$poster" != "" ]] && {
-  echo "Downloading posterimage as $imagename"
-  wget --ignore-length --timeout=10 -o $wgetoutput -O $imagename $poster
-}
-
 [[ "$trailerquality" != "" && "$urllink" != "" ]] && {
-  wget --ignore-length --timeout=10 -o $wgetoutput -O $wgettemp $urllink
+  wget $sedflags -o $wgetoutput -O $wgettemp $urllink
   fakelinkname=$(echo $urllink | tr '/' '\n' | grep -i "\.mov$")
   reallinkname=$(cat $wgettemp | tr -c 'a-zA-Z0-9\-\.\_' '\n' | grep -i "\.mov")
   reallink=$(echo $urllink | sed "s|$fakelinkname|$reallinkname|")
   rm -f $wgettemp
   [[ "$trailerdir" != "" ]] && {
+    [[ "$trailername" != "" ]] && {
+      orgtrailername=$trailername
+    }
     trailername=$(echo ${orgrelname}.mov | tr -c 'a-zA-Z0-9\-\.\n' '.')
   }
   [[ "$trailername" == "" ]] && {
     trailername=$(echo $urllink | tr '/' '\n' | grep -i "mov$" | tail -n 1)
   }
+  [[ "$orgtrailername" == "" ]] && {
+    orgtrailername=$trailername
+  }
   echo "Downloading trailer in $quality quality as $trailername"
-  wget --ignore-length --timeout=10 -o $wgetoutput -O ${trailerdir}${trailername} $reallink
+  wget $sedflags -o $wgetoutput -O ${trailerdir}${trailername} $reallink
+  [[ ! -s ${trailerdir}${trailername} ]] && {
+    echo "For unknown reasons the script failed to download the trailer"
+    echo "Please report this as a bug to the developer (psxc - psxc@psxc.com)"
+    echo "Do not forget to include the name of the movie that failed."
+    rm -f ${trailerdir}${trailername}
+    exit 1
+  }
+  [[ "$trailerdir" != "" && "$usebothdirs" != "" ]] && {
+    cp -fp ${trailerdir}${trailername} $orgtrailername
+  }
 }
+[[ "$downloadimage" != "" && "$poster" != "" ]] && {
+  echo "Downloading posterimage as $imagename"
+  wget $sedflags -o $wgetoutput -O $imagename $poster
+}
+
 echo "done"
 exit 0
 
