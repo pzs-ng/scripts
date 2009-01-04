@@ -60,9 +60,12 @@ GLLOG=/ftp-data/logs/glftpd.log
 # a logfile which list all successfully unpacked dirs.
 COMPLETELOG=/tmp/psxc-unpack-complete.log
 
-# the default logformat (below in bsd format) gives the date
-# an hour into the future.
-LOGDATEFORMAT="-v+1H +%s"
+# If the following variable is set empty it will set the format
+# an hour into the future. If this does not work for you or you
+# wish to set it manually, do so with this variable.
+# The defaults are:
+# "-v+1H +%s" (BSD), "--date='1 hour ago' +%s" (Linux)
+LOGDATEFORMAT=""
 
 # in what dirs should this script be executed?
 DIRS="/site/XVID /site/DVDR"
@@ -133,6 +136,12 @@ COMPLETESCRIPT="/bin/psxc-trailer.sh"
 
 # remove the # on the line below for debug purposes only.
 #set -x -v
+
+[[ "$LOGDATEFORMAT" == "" && "$(uname | grep -i "bsd$")" == "" ]] && {
+  LOGDATEFORMAT="--date='1 hour ago' +%s"
+} || {
+  LOGDATEFORMAT="-v+1H +%s"
+}
 
 RDIR=""
 [[ -d $GLROOT/bin ]] && RDIR=$GLROOT
