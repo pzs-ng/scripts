@@ -29,6 +29,8 @@ v2.5 - added support for completescript - a script to be executed after
        successful unpacking of release.
 v2.6 - fixed a small bug when trying to cd .. when pwd was deleted.
      - changed default SUBDIRS string to something better.
+v2.7 - changed LOGDATEFORMAT to WAITSECONDS - this will let the script work
+       on both BSD and Linux w/o changing vars.
 
-// psxc(c)2006-2008
+// psxc(c)2006-2009
 

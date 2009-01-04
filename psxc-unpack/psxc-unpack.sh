@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# psxc-unpack.sh v2.6 (c) psxc//2008
+# psxc-unpack.sh v2.7 (c) psxc//2009
 ####################################
 #
 # This simple little thingy extracts files in a dir and removes the
@@ -60,12 +60,9 @@ GLLOG=/ftp-data/logs/glftpd.log
 # a logfile which list all successfully unpacked dirs.
 COMPLETELOG=/tmp/psxc-unpack-complete.log
 
-# If the following variable is set empty it will set the format
-# an hour into the future. If this does not work for you or you
-# wish to set it manually, do so with this variable.
-# The defaults are:
-# "-v+1H +%s" (BSD), "--date='1 hour ago' +%s" (Linux)
-LOGDATEFORMAT=""
+# How much time (in seconds) should the script wait before
+# unpacking a release? The default value is 3600 (1 hour)
+WAITSECONDS=3600
 
 # in what dirs should this script be executed?
 DIRS="/site/XVID /site/DVDR"
@@ -136,12 +133,6 @@ COMPLETESCRIPT="/bin/psxc-trailer.sh"
 
 # remove the # on the line below for debug purposes only.
 #set -x -v
-
-[[ "$LOGDATEFORMAT" == "" && "$(uname | grep -i "bsd$")" == "" ]] && {
-  LOGDATEFORMAT="--date='1 hour ago' +%s"
-} || {
-  LOGDATEFORMAT="-v+1H +%s"
-}
 
 RDIR=""
 [[ -d $GLROOT/bin ]] && RDIR=$GLROOT
@@ -289,7 +280,8 @@ while [ 1 ]; do
     destpath="$PWD"
 #    cd "$curpath"
     [[ -z "$(echo "$destpath" | grep -- "^$GLROOT")" ]] && destpath="$(echo "$GLROOT/$destpath" | tr -s "/")"
-    [[ ! -z "$LOGDATEFORMAT" && ! -z "$COMPLETELOG" ]] &&  echo "$(date $LOGDATEFORMAT) $destpath" >>$RDIR/$COMPLETELOG
+    let LOGDATEFORMAT=$(date +%s)-${WAITSECONDS:-3600}
+    [[ ! -z "$COMPLETELOG" ]] &&  echo "$LOGDATEFORMAT $destpath" >>$RDIR/$COMPLETELOG
     [[ ! -z "$COMPLETESCRIPT" && -x $COMPLETESCRIPT ]] && {
       echo "psxc-unpack: Executing script... please wait."
       $COMPLETESCRIPT
