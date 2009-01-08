@@ -27,7 +27,7 @@ UNPACK_CONF=/etc/psxc-unpack.conf
 COMPLETE_DIR="*\[*\]*[-][ ][Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ee]*\[*\]*"
 
 # nuked dir style
-NUKED_DIRS="\[NUKED\]*"
+NUKED_DIRS="\[NUKED\].*"
 
 # what dirs to search - IMPORTANT!!!
 SEARCH_DIRS="/site/XVID /site/DVDR"

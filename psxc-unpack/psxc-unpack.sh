@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# psxc-unpack.sh v2.7 (c) psxc//2009
+# psxc-unpack.sh v2.8 (c) psxc//2009
 ####################################
 #
 # This simple little thingy extracts files in a dir and removes the
@@ -85,7 +85,7 @@ FILETYPES="\.[Rr][Aa][Rr]$ \.001$"
 SUBDIRS="^[CcDdSs][DdVvIiUu][DdSsBb]?[CcKkSs]?[0-9A-Za-z]?[0-9A-Za-z]?$"
 
 # how your completedirs look like. (This is regexp style, so keep the .*)
-COMPLETEDIR=".*\[.*\].*[-].[Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ee].*\[.*\].*"
+COMPLETEDIR=".*\[.*\].*[-].*[Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ee].*\[.*\].*"
 
 # this variable holds a list of files/dirs to remove if extraction was complete.
 # (not regexp style, so slightly different.) separate with a space.
@@ -205,7 +205,7 @@ while [ 1 ]; do
     cd "$RDIR/$DNAME"
     while read FNAME; do
       for FTYPE in $FILETYPES; do
-        [[ ! -z "$(echo "$FNAME" | grep $FTYPE)" ]] && {
+        [[ ! -z "$(echo "$FNAME" | grep -E $FTYPE)" ]] && {
           EXTRACTNAME="$FNAME"
           BASETYPE=$FTYPE
           break
@@ -220,7 +220,7 @@ while [ 1 ]; do
     [[ -z "$EXTRACTNAME" ]] && break
     SMATCH=0
     for SUBDIR in $SUBDIRS; do
-      [[ ! -z "$(basename "$DNAME" | grep -e "$SUBDIR")" ]] && SMATCH=1 && break
+      [[ ! -z "$(basename "$DNAME" | grep -E "$SUBDIR")" ]] && SMATCH=1 && break
     done
     [[ $SMATCH -eq 1 ]] && PARENT="../" || PARENT=""
     BASENAME="$(echo "$EXTRACTNAME" | sed "s/\.[Pp][Aa][Rr][Tt][0-9]*\././" | sed "s/$BASETYPE//")"
@@ -246,7 +246,7 @@ while [ 1 ]; do
         EXTRACTNAME=""
         while read FNAME; do
           for FTYPE in $FILETYPES; do
-            [[ ! -z "$(echo "$FNAME" | grep $FTYPE)" ]] && {
+            [[ ! -z "$(echo "$FNAME" | grep -E $FTYPE)" ]] && {
               EXTRACTNAME="$FNAME"
               BASETYPE=$FTYPE
               break

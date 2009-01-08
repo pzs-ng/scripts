@@ -58,7 +58,7 @@ FILETYPES="\.[Rr][Aa][Rr]$ \.001$"
 SUBDIRS="^[CcDdSs][DdVvIiUu][DdSsBb]?[CcKkSs]?[0-9A-Za-z]?[0-9A-Za-z]?$"
 
 # how your completedirs look like. (This is regexp style, so keep the .*)
-COMPLETEDIR=".*\[.*\].*[-].[Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ee].*\[.*\].*"
+COMPLETEDIR=".*\[.*\].*[-].*[Cc][Oo][Mm][Pp][Ll][Ee][Tt][Ee].*\[.*\].*"
 
 # this variable holds a list of files/dirs to remove if extraction was complete.
 # (not regexp style, so slightly different.) separate with a space.

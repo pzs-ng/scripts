@@ -31,6 +31,9 @@ v2.6 - fixed a small bug when trying to cd .. when pwd was deleted.
      - changed default SUBDIRS string to something better.
 v2.7 - changed LOGDATEFORMAT to WAITSECONDS - this will let the script work
        on both BSD and Linux w/o changing vars.
+v2.8 - fixed a typo when dealing with extended regexp (grep -e -> grep -E).
+     - fixed small bugs in the default config when searching for dirs/files to
+     - delete (complete-bar, dot-files etc)
 
 // psxc(c)2006-2009
 
