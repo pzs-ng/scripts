@@ -34,6 +34,9 @@ v2.7 - changed LOGDATEFORMAT to WAITSECONDS - this will let the script work
 v2.8 - fixed a typo when dealing with extended regexp (grep -e -> grep -E).
      - fixed small bugs in the default config when searching for dirs/files to
      - delete (complete-bar, dot-files etc)
+v2.9 - fixed another typo related to WAITSECONDS - made the script unpack to
+       early.
+     - fixed a bug related to RMFILES - should now delete properly.
 
 // psxc(c)2006-2009
 

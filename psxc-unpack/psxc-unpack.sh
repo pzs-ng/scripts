@@ -238,7 +238,7 @@ while [ 1 ]; do
       mv -f ./.psxctmp/* ./ && rm -fR ./.psxctmp
       [[ ! -z "$RMFILES" ]] && {
         for DELME in $RMFILES; do
-          $RMDIR $DELME
+          $RMDIR "$DELME"
         done
       }
       [[ ! -z "$PARENT" ]] && {
@@ -280,7 +280,7 @@ while [ 1 ]; do
     destpath="$PWD"
 #    cd "$curpath"
     [[ -z "$(echo "$destpath" | grep -- "^$GLROOT")" ]] && destpath="$(echo "$GLROOT/$destpath" | tr -s "/")"
-    let LOGDATEFORMAT=$(date +%s)-${WAITSECONDS:-3600}
+    let LOGDATEFORMAT=$(date +%s)+${WAITSECONDS:-3600}
     [[ ! -z "$COMPLETELOG" ]] &&  echo "$LOGDATEFORMAT $destpath" >>$RDIR/$COMPLETELOG
     [[ ! -z "$COMPLETESCRIPT" && -x $COMPLETESCRIPT ]] && {
       echo "psxc-unpack: Executing script... please wait."

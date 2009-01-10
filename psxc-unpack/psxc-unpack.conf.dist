@@ -70,7 +70,7 @@ RUN_NOW=0
 
 # If you wish to remove write-rights of the dirs after extraction, set this
 # variable to 1.
-CHMOD_DIRS=1
+CHMOD_DIRS=0
 
 # The script supports unpacking of zipfiles as well. If the following variable
 # is set, the script will try to unpack zipfiles as well. To disable it, set
