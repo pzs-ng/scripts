@@ -37,6 +37,7 @@ v2.8 - fixed a typo when dealing with extended regexp (grep -e -> grep -E).
 v2.9 - fixed another typo related to WAITSECONDS - made the script unpack to
        early.
      - fixed a bug related to RMFILES - should now delete properly.
+v2.10- fixed a bug related to zip-files with spaces in the filename.
 
 // psxc(c)2006-2009
 

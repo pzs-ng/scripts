@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# psxc-unpack.sh v2.8 (c) psxc//2009
-####################################
+# psxc-unpack.sh v2.10 (c) psxc//2009
+#####################################
 #
 # This simple little thingy extracts files in a dir and removes the
 # archive files afterwards. You can use this two ways - either extract
@@ -189,14 +189,21 @@ while [ 1 ]; do
     [[ ! -e "$RDIR/$DNAME" ]] && break
     [[ ! -z "ZIPUNPACK" && ! -z "$(ls -1 | grep "\.[Zz][Ii][Pp]$")" && $ZRETVAL -eq 0 ]] && {
       mkdir ./.psxctmp
+      OFS=$IFS
+      IFS=${IFS# }
       for zipfile in $(ls -1 | grep "\.[Zz][Ii][Pp]$" | sort); do
-        $UNZIP -oCjd ./.psxctmp $zipfile
+        unset IFS
+        $UNZIP -oCjd ./.psxctmp "$zipfile"
         let ZRETVAL=ZRETVAL+$?
       done
+      IFS=$OFS
       [[ $ZRETVAL -eq 0 ]] && {
+        IFS=${IFS# }
         for zipfile in $(ls -1 | grep "\.[Zz][Ii][Pp]$" | sort); do
-          $RM $zipfile
+          IFS=$OFS
+          $RM "$zipfile"
         done
+        IFS=$OFS
         mv ./.psxctmp/* ./
       }
       rm -fR ./.psxctmp
