@@ -2,7 +2,7 @@
 
 ###########################################
 #
-# psxc-media.sh v0.3
+# psxc-media.sh v0.3a
 # ==================
 # A small wrapper to MediaInfo to announce sample info.
 # Supported formats are divx/xvid, vcd/svcd, quicktime, mp3 -
@@ -47,6 +47,10 @@ gconvert=/bin/psxc-genreconvert
 
 # where do i find a temp dir?
 tempdir=/tmp
+
+# where to announce? default is stdout.
+# for announces to channel it should probably be changed to /ftp-data/logs/glftpd.log
+logto="/dev/stdout"
 
 #########################################################
 #
@@ -121,19 +125,19 @@ date="$(date "+%a %b %d %H:%M:%S %Y")"
 
 case $family in
 	avi)
-		echo "$date SAMPLE_AVI: "$PWD" {$USER} {$GROUP} {$v_codec} {$v_framerate} {$v_bitrate} {$v_height} {$v_width} {$v_aspectratio} {$v_interlacement} {$a_codec} {$a_bitrate} {$a_bitratemode} {$a_channels} {$a_samplingrate} {$a_resolution} {$a_codecprofile}"
+		echo "$date SAMPLE_AVI: "$PWD" {$USER} {$GROUP} {$v_codec} {$v_framerate} {$v_bitrate} {$v_height} {$v_width} {$v_aspectratio} {$v_interlacement} {$a_codec} {$a_bitrate} {$a_bitratemode} {$a_channels} {$a_samplingrate} {$a_resolution} {$a_codecprofile}" >>$logto
 		;;
 	mpeg2)
-		echo "$date SAMPLE_MPEG2: "$PWD" {$USER} {$GROUP} {$v_codec} {$v_framerate} {$v_bitrate} {$v_bitratemode} {$v_standard} {$v_height} {$v_width} {$v_aspectratio} {$v_interlacement} {$a_codec} {$a_bitrate} {$a_bitratemode} {$a_channels} {$a_samplingrate} {$a_resolution}"
+		echo "$date SAMPLE_MPEG2: "$PWD" {$USER} {$GROUP} {$v_codec} {$v_framerate} {$v_bitrate} {$v_bitratemode} {$v_standard} {$v_height} {$v_width} {$v_aspectratio} {$v_interlacement} {$a_codec} {$a_bitrate} {$a_bitratemode} {$a_channels} {$a_samplingrate} {$a_resolution}" >>$logto
 		;;
 	mpeg1)
-		echo "$date SAMPLE_MPEG1: "$PWD" {$USER} {$GROUP} {$a_codec} {$a_bitrate} {$a_bitratemode} {$a_channels} {$a_samplingrate} {$a_resolution} {$a_genre} {$a_year} {$a_codecprofile}"
+		echo "$date SAMPLE_MPEG1: "$PWD" {$USER} {$GROUP} {$a_codec} {$a_bitrate} {$a_bitratemode} {$a_channels} {$a_samplingrate} {$a_resolution} {$a_genre} {$a_year} {$a_codecprofile}" >>$logto
 		;;
 	qt)
-		echo "$date SAMPLE_QT: "$PWD" {$USER} {$GROUP} {$v_codec} {$v_framerate} {$v_bitrate} {$v_height} {$v_width} {$v_aspectratio} {$v_interlacement} {$a_codec} {$a_bitrate} {$a_bitratemode} {$a_channels} {$a_samplingrate} {$a_resolution}"
+		echo "$date SAMPLE_QT: "$PWD" {$USER} {$GROUP} {$v_codec} {$v_framerate} {$v_bitrate} {$v_height} {$v_width} {$v_aspectratio} {$v_interlacement} {$a_codec} {$a_bitrate} {$a_bitratemode} {$a_channels} {$a_samplingrate} {$a_resolution}" >>$logto
 		;;
 	general)
-		echo "$date SAMPLE_GENERAL: "$PWD" {$USER} {$GROUP} {$v_codec} {$v_framerate} {$v_bitrate} {$v_height} {$v_width} {$v_aspectratio} {$a_codec} {$a_bitrate} {$a_bitratemode} {$a_channels} {$a_samplingrate} {$a_resolution}"
+		echo "$date SAMPLE_GENERAL: "$PWD" {$USER} {$GROUP} {$v_codec} {$v_framerate} {$v_bitrate} {$v_height} {$v_width} {$v_aspectratio} {$a_codec} {$a_bitrate} {$a_bitratemode} {$a_channels} {$a_samplingrate} {$a_resolution}" >>$logto
 		;;
 esac
 
