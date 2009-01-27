@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# psxc-unpack.sh v2.10 (c) psxc//2009
+# psxc-unpack.sh v2.11 (c) psxc//2009
 #####################################
 #
 # This simple little thingy extracts files in a dir and removes the
@@ -196,14 +196,16 @@ while [ 1 ]; do
         $UNZIP -oCjd ./.psxctmp "$zipfile"
         let ZRETVAL=ZRETVAL+$?
       done
+      unset IFS
       IFS=$OFS
       [[ $ZRETVAL -eq 0 ]] && {
         IFS=${IFS# }
         for zipfile in $(ls -1 | grep "\.[Zz][Ii][Pp]$" | sort); do
+          unset IFS
           IFS=$OFS
           $RM "$zipfile"
         done
-        IFS=$OFS
+        unset IFS
         mv ./.psxctmp/* ./
       }
       rm -fR ./.psxctmp
@@ -230,7 +232,7 @@ while [ 1 ]; do
       [[ ! -z "$(basename "$DNAME" | grep -E "$SUBDIR")" ]] && SMATCH=1 && break
     done
     [[ $SMATCH -eq 1 ]] && PARENT="../" || PARENT=""
-    BASENAME="$(echo "$EXTRACTNAME" | sed "s/\.[Pp][Aa][Rr][Tt][0-9]*\././" | sed "s/$BASETYPE//")"
+    BASENAME="$(echo "$EXTRACTNAME" | sed "s/\.[Pp][Aa][Rr][Tt][0-9]*\.[rRaA0-9][rRaA0-9][rRaA0-9]$/./" | sed "s/$BASETYPE//")"
     unrar vt -v -- "$EXTRACTNAME" | grep -- "$BASENAME" | grep -v "^ " | grep -o -- "$BASENAME.*" >$RDIR/$LOGFILE.lst
     mkdir ./.psxctmp
     $UNRAR "$EXTRACTNAME" ./.psxctmp/
