@@ -510,7 +510,7 @@ sub irc_public {
         }
         my ($revision, $type) = ($1, $2);
         chdir($heap->{config}->{template_mirror_path});
-        my @files = glob("files/$type/r${revision}_pzs-ng*.tar.gz");
+        my @files = glob("files/$type/project-zs-ng_r${revision}*.tar.gz");
         if (!@files) {
             $kernel->post($sender => 'privmsg' => $target => "$from, heh, r$revision isn't $type, so can't really change it ;)");
         } else {
