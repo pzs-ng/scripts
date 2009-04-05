@@ -24,6 +24,10 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/games:/usr/local/sbin:/usr/local/bin:/us
 # String of subdirs to be ignored.
 SUBDIRS="^[Cc][Dd][0-9]$|^[Dd][Vv][Dd][0-9]$|^[Ss][Uu][Bb].$"
 
+# Files/dirs with the following chars will not be moved. This option is required
+# if you move a release to a different filesystem that cannot handle the chars.
+DENYCHARS="%"
+
 #################################
 # code
 #set -x -v
@@ -44,8 +48,24 @@ while [ $lines -gt 0 ]; do
  dirline="$(echo $line | cut -d ' ' -f 2-)"
  [[ ! -z "$(basename $dirline | grep -E -- "$SUBDIRS")" ]] && dirline="$(dirname "$dirline")"
  [[ -d "$dirline" && ! -z "$(echo "$dirline" | grep -- "$GLSITE")" ]] && {
-  cp -fRpn "$dirline" $CPDEST/
-  mv -n "$dirline" $MVDEST/
+  mylines="$(find "$dirline" -type d | sed "s|$(dirname $dirline)||g")"
+  IFS="
+"
+  for myline in $mylines; do
+echo   mkdir -pm777 $CPDEST/$myline
+echo   mkdir -pm777 $MVDEST/$myline
+  done
+  mylines="$(find "$dirline" -type f | sed "s|$(dirname $dirline)||g")"
+  IFS="
+"
+  for myline in $mylines; do
+echo   cp -p $myline $CPDEST/
+echo   cp -p $myline $MVDEST/
+  done
+echo   rm -fR $dirline
+
+#  cp -fRpn "$dirline" $CPDEST/
+#  mv -n "$dirline" $MVDEST/
  }
  lines=$(wc -l $LOGFILE | tr  ' ' '\n' | grep -v '/' | grep -v "^$")
 done

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# psxc-unpack.sh v2.11 (c) psxc//2009
+# psxc-unpack.sh v2.12 (c) psxc//2009
 #####################################
 #
 # This simple little thingy extracts files in a dir and removes the
@@ -30,8 +30,8 @@
 #   site_cmd UNPACK EXEC /bin/psxc-unpack.sh
 #   custom-unpack 1
 
-# neeed bins:
-# unrar uzip sort ps grep cat awk head ls echo mv tr chmod wc basename tr (nice)
+# needed bins:
+# unrar unzip sort ps grep cat awk head ls echo mv tr chmod wc basename tr (nice)
 
 #####################################################
 # CONFIGURATION
@@ -166,7 +166,7 @@ while [ 1 ]; do
   [[ -z "$(cat "$RDIR/$LOGFILE")" ]] && break
   DNAME="$(head -n 1 $RDIR/$LOGFILE)"
   [[ ! -d "$RDIR/$DNAME" ]] && {
-    grep -v "$DNAME" "$RDIR/$LOGFILE" > "$RDIR/$LOGFILE.tmp"
+    grep -v -F "$DNAME" "$RDIR/$LOGFILE" > "$RDIR/$LOGFILE.tmp"
     mv "$RDIR/$LOGFILE.tmp" "$RDIR/$LOGFILE"
     continue
   }
@@ -178,7 +178,7 @@ while [ 1 ]; do
     }
   done
   [[ ! -z "$IGNORED" ]] && {
-    grep -v "$DNAME" "$RDIR/$LOGFILE" > "$RDIR/$LOGFILE.tmp"
+    grep -v -F "$DNAME" "$RDIR/$LOGFILE" > "$RDIR/$LOGFILE.tmp"
     mv "$RDIR/$LOGFILE.tmp" "$RDIR/$LOGFILE"
     continue
   }
@@ -224,7 +224,7 @@ while [ 1 ]; do
     done < "$RDIR/$LOGFILE.tmp"
     rm "$RDIR/$LOGFILE.tmp"
     :>"$RDIR/$LOGFILE.tmp" && chmod 666 "$RDIR/$LOGFILE.tmp"
-    grep -v "$DNAME" "$RDIR/$LOGFILE" > "$RDIR/$LOGFILE.tmp"
+    grep -v -F "$DNAME" "$RDIR/$LOGFILE" > "$RDIR/$LOGFILE.tmp"
     mv "$RDIR/$LOGFILE.tmp" "$RDIR/$LOGFILE"
     [[ -z "$EXTRACTNAME" ]] && break
     SMATCH=0

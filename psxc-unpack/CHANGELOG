@@ -39,6 +39,7 @@ v2.9 - fixed another typo related to WAITSECONDS - made the script unpack to
      - fixed a bug related to RMFILES - should now delete properly.
 v2.10- fixed a bug related to zip-files with spaces in the filename.
 v2.11- fixed a (long standing) bug related to partXX named files.
+v2.12- fixed another long standing bug related to [ and ] in dirnames.
 
 // psxc(c)2006-2009
 
